@@ -1,0 +1,434 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model NGO {
+  id            Int      @id @default(autoincrement())
+  name          String
+  tagline       String?
+  address       String?
+  phone         String?
+  email         String?
+  website       String?
+  logoUrl       String?
+  receiptColor  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  users                       User[]
+  staffAssignments            StaffAssignment[]
+  clothingCategories          ClothingCategory[]
+  donations                   Donation[]
+  inventoryItems              InventoryItem[]
+  inventoryTransactions       InventoryTransaction[]
+  requirements                Requirement[]
+  beneficiaryGroups           BeneficiaryGroup[]
+  distributions               Distribution[]
+  campaigns                   Campaign[]
+  impactStories               ImpactStory[]
+  donationReceipts            DonationReceipt[]
+  auditLogs                   AuditLog[]
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  passwordHash  String?
+  name          String
+  phone         String?
+  role          String
+  ngoId         Int?
+  avatarUrl     String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ngo                           NGO?                  @relation(fields: [ngoId], references: [id], onDelete: SetNull)
+  staffAssignment               StaffAssignment?
+  donationsMade                 Donation[]            @relation("DonorDonations")
+  changedStatuses               DonationStatusHistory[]
+  performedTransactions         InventoryTransaction[]
+  createdRequirements           Requirement[]
+  createdDistributions          Distribution[]
+  createdCampaigns              Campaign[]
+  authoredStories               ImpactStory[]
+  notifications                 Notification[]
+  generatedReceipts             DonationReceipt[]
+  auditLogs                     AuditLog[]            @relation("ActorAuditLogs")
+  assignedStaffAssignments      StaffAssignment[]     @relation("AssignedByUser")
+
+  @@index([ngoId, role])
+}
+
+model StaffAssignment {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique
+  ngoId      Int
+  modules    String
+  assignedBy Int
+  assignedAt DateTime @default(now())
+  revokedAt  DateTime?
+
+  user           User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ngo            NGO  @relation(fields: [ngoId], references: [id], onDelete: Cascade)
+  assignedByUser User @relation("AssignedByUser", fields: [assignedBy], references: [id], onDelete: Restrict)
+}
+
+model ClothingCategory {
+  id                      Int      @id @default(autoincrement())
+  name                    String
+  slug                    String   @unique
+  description             String?
+  imageUrl                String?
+  genderAgeGroup          String?
+  defaultReorderThreshold Int      @default(20)
+  ngoId                   Int
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  ngo                          NGO                          @relation(fields: [ngoId], references: [id], onDelete: Cascade)
+  donationItems                DonationItem[]
+  inventoryItems               InventoryItem[]
+  requirements                 Requirement[]
+  beneficiaryGroupRequirements BeneficiaryGroupRequirement[]
+  distributionItems            DistributionItem[]
+
+  @@unique([name, ngoId])
+}
+
+model Donation {
+  id              Int      @id @default(autoincrement())
+  donationId      String   @unique
+  donorId         Int
+  ngoId           Int
+  campaignId      Int?
+  donorName       String
+  donorEmail      String
+  donorPhone      String?
+  pickupAddress   String?
+  notes           String?
+  totalItems      Int      @default(0)
+  currentStatus   String
+  rejectionReason String?
+  qrCodeUrl       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  donor             User                  @relation("DonorDonations", fields: [donorId], references: [id], onDelete: Restrict)
+  ngo               NGO                   @relation(fields: [ngoId], references: [id], onDelete: Cascade)
+  campaign          Campaign?             @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  items             DonationItem[]
+  statusHistory     DonationStatusHistory[]
+  campaignDonations CampaignDonation[]
+  receipt           DonationReceipt?
+
+  @@index([donorId])
+  @@index([ngoId, currentStatus])
+}
+
+model DonationItem {
+  id               Int      @id @default(autoincrement())
+  donationId       Int
+  categoryId       Int
+  size             String?
+  condition        String
+  quantity         Int
+  imageUrl         String?
+  description      String?
+  batchId          String?
+  addedToInventory Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now())
+
+  donation              Donation              @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  category              ClothingCategory      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  inventoryTransactions InventoryTransaction[]
+
+  @@index([donationId, categoryId])
+}
+
+model DonationStatusHistory {
+  id        Int      @id @default(autoincrement())
+  donationId Int
+  status    String
+  note      String?
+  changedBy Int
+  createdAt DateTime @default(now())
+
+  donation      Donation @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  changedByUser User     @relation(fields: [changedBy], references: [id], onDelete: Restrict)
+
+  @@index([donationId])
+}
+
+model InventoryItem {
+  id             Int      @id @default(autoincrement())
+  ngoId          Int
+  categoryId     Int
+  size           String?
+  genderAgeGroup String?
+  condition      String
+  quantity       Int      @default(0)
+  availableQty   Int      @default(0)
+  reservedQty    Int      @default(0)
+  distributedQty Int      @default(0)
+  location       String?
+  batchId        String?  @unique
+  status         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  ngo                   NGO                   @relation(fields: [ngoId], references: [id], onDelete: Cascade)
+  category              ClothingCategory      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  inventoryTransactions InventoryTransaction[]
+  distributionItems     DistributionItem[]
+
+  @@unique([ngoId, categoryId, size, condition])
+  @@index([ngoId, categoryId])
+}
+
+model InventoryTransaction {
+  id                 Int      @id @default(autoincrement())
+  inventoryItemId    Int?
+  donationItemId     Int?
+  distributionItemId Int?
+  type               String
+  quantityChange     Int
+  unitNote           String?
+  performedBy        Int
+  ngoId              Int
+  createdAt          DateTime @default(now())
+
+  inventoryItem    InventoryItem?   @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+  donationItem     DonationItem?    @relation(fields: [donationItemId], references: [id], onDelete: SetNull)
+  distributionItem DistributionItem? @relation(fields: [distributionItemId], references: [id], onDelete: SetNull)
+  performedByUser  User             @relation(fields: [performedBy], references: [id], onDelete: Restrict)
+  ngo              NGO              @relation(fields: [ngoId], references: [id], onDelete: Cascade)
+
+  @@index([inventoryItemId])
+  @@index([ngoId])
+}
+
+model Requirement {
+  id           Int      @id @default(autoincrement())
+  ngoId        Int
+  categoryId   Int
+  title        String
+  description  String?
+  requiredQty  Int
+  priority     String
+  deadline     DateTime?
+  program      String?
+  fulfilledQty Int      @default(0)
+  active       Boolean  @default(true)
+  createdBy    Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ngo           NGO              @relation(fields: [ngoId], references: [id], onDelete: Cascade)
+  category      ClothingCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdByUser User             @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([ngoId, active])
+}
+
+model BeneficiaryGroup {
+  id        Int      @id @default(autoincrement())
+  ngoId     Int
+  groupCode String   @unique
+  program   String?
+  ageGroup  String?
+  size      String?
+  status    String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ngo                          NGO                          @relation(fields: [ngoId], references: [id], onDelete: Cascade)
+  beneficiaryGroupRequirements BeneficiaryGroupRequirement[]
+  distributions                Distribution[]
+  distributionItems            DistributionItem[]
+
+  @@index([ngoId])
+}
+
+model BeneficiaryGroupRequirement {
+  id                 Int @id @default(autoincrement())
+  beneficiaryGroupId Int
+  categoryId         Int
+  requiredQty        Int
+  note               String?
+
+  beneficiaryGroup BeneficiaryGroup @relation(fields: [beneficiaryGroupId], references: [id], onDelete: Cascade)
+  category         ClothingCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+}
+
+model Distribution {
+  id                 Int      @id @default(autoincrement())
+  ngoId              Int
+  name               String
+  description        String?
+  program            String?
+  location           String?
+  eventDate          DateTime?
+  beneficiaryGroupId Int?
+  status             String   @default("DRAFT")
+  totalItems         Int      @default(0)
+  createdBy          Int
+  completedAt        DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  ngo              NGO               @relation(fields: [ngoId], references: [id], onDelete: Cascade)
+  beneficiaryGroup BeneficiaryGroup? @relation(fields: [beneficiaryGroupId], references: [id], onDelete: SetNull)
+  items            DistributionItem[]
+  createdByUser    User              @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([ngoId, status])
+}
+
+model DistributionItem {
+  id                 Int @id @default(autoincrement())
+  distributionId     Int
+  inventoryItemId    Int?
+  categoryId         Int?
+  size               String?
+  quantity           Int
+  beneficiaryGroupId Int?
+  unitCost           Float?
+  note               String?
+
+  distribution          Distribution            @relation(fields: [distributionId], references: [id], onDelete: Cascade)
+  inventoryItem         InventoryItem?          @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+  category              ClothingCategory?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  beneficiaryGroup      BeneficiaryGroup?       @relation(fields: [beneficiaryGroupId], references: [id], onDelete: SetNull)
+  inventoryTransactions InventoryTransaction[]
+}
+
+model Campaign {
+  id            Int      @id @default(autoincrement())
+  ngoId         Int
+  name          String
+  slug          String   @unique
+  description   String?
+  coverImageUrl String?
+  targetQty     Int
+  startDate     DateTime?
+  endDate       DateTime?
+  priority      String
+  status        String   @default("DRAFT")
+  createdBy     Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ngo               NGO              @relation(fields: [ngoId], references: [id], onDelete: Cascade)
+  createdByUser     User             @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  donations         Donation[]
+  campaignDonations CampaignDonation[]
+
+  @@index([ngoId, status])
+}
+
+model CampaignDonation {
+  id         Int      @id @default(autoincrement())
+  campaignId Int
+  donationId Int
+  itemsCount Int
+  assignedAt DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  donation Donation @relation(fields: [donationId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, donationId])
+}
+
+model ImpactStory {
+  id               Int      @id @default(autoincrement())
+  ngoId            Int
+  title            String
+  slug             String   @unique
+  content          String
+  coverImageUrl    String?
+  itemsDistributed Int?
+  program          String?
+  stats            String?
+  published        Boolean  @default(false)
+  publishedAt      DateTime?
+  authorId         Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  ngo    NGO  @relation(fields: [ngoId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([ngoId, published])
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  title       String
+  message     String
+  relatedType String?
+  relatedId   Int?
+  read        Boolean  @default(false)
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+model DonationReceipt {
+  id            Int      @id @default(autoincrement())
+  donationId    Int      @unique
+  ngoId         Int
+  generatedBy   Int
+  receiptNumber String   @unique
+  pdfUrl        String?
+  issuedAt      DateTime @default(now())
+
+  donation        Donation @relation(fields: [donationId], references: [id], onDelete: Cascade)
+  ngo             NGO      @relation(fields: [ngoId], references: [id], onDelete: Cascade)
+  generatedByUser User     @relation(fields: [generatedBy], references: [id], onDelete: Restrict)
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  ngoId      Int
+  actorId    Int?
+  actorRole  String?
+  action     String
+  targetType String
+  targetId   Int?
+  metadata   String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  ngo   NGO   @relation(fields: [ngoId], references: [id], onDelete: Cascade)
+  actor User? @relation("ActorAuditLogs", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([ngoId])
+}
+
+/// Fixed-window rate-limit ledger for sensitive public endpoints
+/// (login, register, upload). DB-backed on purpose: reuses the existing
+/// Postgres so no additional third-party service (e.g. Redis) is required.
+model RateLimitEntry {
+  id          Int      @id @default(autoincrement())
+  key         String
+  windowStart DateTime
+  count       Int      @default(0)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@unique([key, windowStart])
+  @@index([expiresAt])
+}

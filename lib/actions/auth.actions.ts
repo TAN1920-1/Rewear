@@ -1,7 +1,7 @@
 "use server"
 
 import { headers } from "next/headers"
-import { signIn } from "@/lib/auth/auth"
+import { signIn, auth } from "@/lib/auth/auth"
 import { createUser } from "@/lib/auth/guards"
 import { prisma } from "@/lib/db/prisma"
 import { UserRole } from "@/lib/enums"
@@ -57,12 +57,20 @@ export async function loginAction(values: LoginSchemaType) {
   }
 
   // Route each role straight to its own portal.
-  const account = await prisma.user.findUnique({
-    where: { email: validated.data.email },
-    select: { role: true },
-  })
+  // Read the role from the freshly-issued JWT (no DB round-trip); fall back
+  // to a single lookup only if the session cookie isn't readable yet.
+  const session = await auth()
+  let role = session?.user?.role as UserRole | undefined
+  if (!role) {
+    const account = await prisma.user.findUnique({
+      where: { email: validated.data.email },
+      select: { role: true },
+    })
+    role = account?.role as UserRole | undefined
+  }
+
   const redirectTo =
-    account?.role === UserRole.NGO_ADMIN || account?.role === UserRole.NGO_STAFF
+    role === UserRole.NGO_ADMIN || role === UserRole.NGO_STAFF
       ? "/admin/dashboard"
       : "/donor/dashboard"
 

@@ -1,7 +1,6 @@
 import Link from "next/link"
-import { Heart, LayoutDashboard, Gift, PlusCircle, Bell, LogOut, Home } from "lucide-react"
+import { Heart, LayoutDashboard, Gift, PlusCircle, Bell, Home } from "lucide-react"
 import { requireRole } from "@/lib/auth/guards"
-import { getCurrentUser } from "@/lib/auth/guards"
 import { Button } from "@/components/ui/button"
 import { UserRole } from "@/lib/enums"
 
@@ -10,8 +9,9 @@ export default async function DonorLayout({
 }: {
   children: React.ReactNode
 }) {
-  await requireRole(UserRole.DONOR)
-  const user = await getCurrentUser()
+  // Identity comes from the signed JWT (no DB round-trip) so the shell can
+  // stream immediately instead of blocking on a ~remote query.
+  const user = await requireRole(UserRole.DONOR)
 
   const navItems = [
     {

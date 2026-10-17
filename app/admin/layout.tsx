@@ -17,7 +17,7 @@ import {
   Shield,
 } from "lucide-react"
 import { requireRole } from "@/lib/auth/guards"
-import { prisma } from "@/lib/db/prisma"
+import { getNgoSummary } from "@/lib/services/ngo.service"
 import { UserRole } from "@/lib/enums"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -44,12 +44,7 @@ export default async function AdminLayout({
 }) {
   const user = await requireRole(UserRole.NGO_ADMIN, UserRole.NGO_STAFF)
 
-  const ngo = user.ngoId
-    ? await prisma.nGO.findUnique({
-        where: { id: user.ngoId },
-        select: { name: true, logoUrl: true },
-      })
-    : null
+  const ngo = user.ngoId ? await getNgoSummary(user.ngoId) : null
 
   async function handleSignOut() {
     "use server"

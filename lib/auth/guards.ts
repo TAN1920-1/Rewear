@@ -1,4 +1,5 @@
 import * as bcrypt from "bcryptjs"
+import { cache } from "react"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/db/prisma"
 import { auth } from "@/lib/auth/auth"
@@ -45,13 +46,46 @@ export async function createUser(data: {
   })
 }
 
-export async function getCurrentUser() {
+/** Minimal authenticated identity derived purely from the signed JWT. */
+export interface SessionUser {
+  id: number
+  email: string
+  name: string
+  role: UserRole
+  ngoId: number | null
+}
+
+/**
+ * Decode the JWT session into a typed user — NO database round-trip.
+ *
+ * Wrapped in `cache()` so the cookie is decoded at most once per request
+ * regardless of how many layouts/pages call it. This is what makes role
+ * guards effectively free on the hot navigation path.
+ */
+export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   const session = await auth()
   if (!session?.user?.id) return null
 
-  const userId = Number(session.user.id)
+  return {
+    id: Number(session.user.id),
+    email: session.user.email ?? "",
+    name: session.user.name ?? "",
+    role: session.user.role as UserRole,
+    ngoId: session.user.ngoId ? Number(session.user.ngoId) : null,
+  }
+})
+
+/**
+ * Full user record (incl. `phone`/`isActive`) — hits the database once per
+ * request, then deduped by `cache()`. Use only where extended fields are
+ * actually needed; prefer `requireRole`/`getSessionUser` everywhere else.
+ */
+export const getCurrentUser = cache(async () => {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) return null
+
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: sessionUser.id },
     select: {
       id: true,
       email: true,
@@ -68,19 +102,19 @@ export async function getCurrentUser() {
     ...user,
     role: user.role as UserRole,
   }
-}
+})
 
-export async function requireAuthenticated() {
-  const user = await getCurrentUser()
+export async function requireAuthenticated(): Promise<SessionUser> {
+  const user = await getSessionUser()
   if (!user) {
     redirect("/login")
   }
   return user
 }
 
-export async function requireRole(...roles: UserRole[]) {
+export async function requireRole(...roles: UserRole[]): Promise<SessionUser> {
   const user = await requireAuthenticated()
-  if (!roles.includes(user.role as UserRole)) {
+  if (!roles.includes(user.role)) {
     redirect("/forbidden")
   }
   return user

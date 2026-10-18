@@ -50,7 +50,7 @@ export default async function AdminDonationsPage() {
   const user = await requireRole(UserRole.NGO_ADMIN, UserRole.NGO_STAFF)
   const ngoId = user.ngoId!
 
-  const [donations, campaigns, counts] = await Promise.all([
+  const [donations, campaigns, totalCount, submittedCount, receivedCount, completedCount] = await Promise.all([
     prisma.donation.findMany({
       where: { ngoId },
       orderBy: { createdAt: "desc" },
@@ -61,19 +61,18 @@ export default async function AdminDonationsPage() {
       where: { ngoId, status: "ACTIVE" },
       select: { id: true, name: true },
     }),
-    {
-      total: prisma.donation.count({ where: { ngoId } }),
-      submitted: prisma.donation.count({
-        where: { ngoId, currentStatus: "SUBMITTED" },
-      }),
-      received: prisma.donation.count({
-        where: { ngoId, currentStatus: "RECEIVED" },
-      }),
-      completed: prisma.donation.count({
-        where: { ngoId, currentStatus: "COMPLETED" },
-      }),
-    },
+    prisma.donation.count({ where: { ngoId } }),
+    prisma.donation.count({ where: { ngoId, currentStatus: "SUBMITTED" } }),
+    prisma.donation.count({ where: { ngoId, currentStatus: "RECEIVED" } }),
+    prisma.donation.count({ where: { ngoId, currentStatus: "COMPLETED" } }),
   ])
+
+  const counts = {
+    total: totalCount,
+    submitted: submittedCount,
+    received: receivedCount,
+    completed: completedCount,
+  }
 
   return (
     <div className="space-y-6">

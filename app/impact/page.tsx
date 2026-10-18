@@ -104,8 +104,8 @@ export default async function ImpactPage() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {stories.map((story) => {
               const excerpt =
-                story.content.length > 160
-                  ? story.content.slice(0, 160).trim() + "…"
+                story.content.length > 280
+                  ? story.content.slice(0, 280).trim() + "…"
                   : story.content
               return (
                 <Card key={story.id} className="glass group border-white/60 overflow-hidden transition-all hover:-translate-y-1 hover:shadow-xl flex flex-col">

@@ -42,7 +42,9 @@ export async function loginAction(values: LoginSchemaType) {
     )
   } catch (error) {
     return {
-      error: rateLimitMessage(error) ?? "Unable to sign in right now. Please try again.",
+      error: rateLimitMessage(error) ?? (process.env.NODE_ENV === "development" 
+        ? `Rate limit check failed: ${error instanceof Error ? error.message : String(error)}`
+        : "Unable to sign in right now. Please try again."),
     }
   }
 
@@ -88,7 +90,9 @@ export async function registerAction(values: RegisterSchemaType) {
     await enforceRateLimit(`register:${clientIp()}`, REGISTER_LIMIT, REGISTER_WINDOW_MS)
   } catch (error) {
     return {
-      error: rateLimitMessage(error) ?? "Unable to register right now. Please try again.",
+      error: rateLimitMessage(error) ?? (process.env.NODE_ENV === "development"
+        ? `Rate limit check failed: ${error instanceof Error ? error.message : String(error)}`
+        : "Unable to register right now. Please try again."),
     }
   }
 

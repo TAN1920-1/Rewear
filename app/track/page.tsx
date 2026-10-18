@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { DonationStatus } from "@/lib/enums"
 import { formatDateTime } from "@/lib/utils/cn"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -133,10 +134,29 @@ function StatusTimeline({ donation }: { donation: PublicDonationTracking }) {
 
 export default function TrackPage() {
   const { toast } = useToast()
-  const [trackingId, setTrackingId] = useState("")
+  const searchParams = useSearchParams()
+  const [trackingId, setTrackingId] = useState(searchParams.get("id") ?? "")
   const [donation, setDonation] = useState<PublicDonationTracking | null>(null)
   const [searched, setSearched] = useState(false)
   const [isPending, startTransition] = useTransition()
+
+  // Auto-search when an ?id= param is present in the URL
+  useEffect(() => {
+    const idParam = searchParams.get("id")
+    if (idParam) {
+      startTransition(async () => {
+        const result = await fetchDonationByTrackingId(idParam)
+        if (!result) {
+          setDonation(null)
+          setSearched(true)
+        } else {
+          setDonation(result)
+          setSearched(true)
+        }
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

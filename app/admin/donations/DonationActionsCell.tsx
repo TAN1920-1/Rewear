@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { ChevronRight, Ban, Link as LinkIcon, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -19,6 +20,7 @@ export function DonationActionsCell({
   currentStatus,
   nextStatus,
 }: DonationActionsCellProps) {
+  const router = useRouter()
   const [isPending, setIsPending] = useState(false)
 
   const handleAdvance = async () => {
@@ -28,6 +30,7 @@ export function DonationActionsCell({
       const res = await advanceDonationStatusAction(donationId, nextStatus)
       if (res.success) {
         toast.success(`Donation advanced to ${nextStatus.replace(/_/g, " ")}`)
+        router.refresh()
       } else {
         toast.error(res.error || "Failed to advance donation status")
       }
@@ -47,6 +50,7 @@ export function DonationActionsCell({
       const res = await advanceDonationStatusAction(donationId, "REJECTED", reason || undefined)
       if (res.success) {
         toast.success("Donation rejected")
+        router.refresh()
       } else {
         toast.error(res.error || "Failed to reject donation")
       }

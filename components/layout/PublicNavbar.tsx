@@ -33,6 +33,9 @@ export function PublicNavbar() {
           <Link href="/track" className="hover:text-emerald-600 transition-colors">
             Track Donation
           </Link>
+          <Link href="/#contact" className="hover:text-emerald-600 transition-colors">
+            Contact
+          </Link>
         </nav>
 
         <div className="flex items-center gap-2">

@@ -6,6 +6,7 @@ import { CreateDonationSchema, CreateDonationSchemaType } from "@/lib/validation
 import { DonationStatus } from "@/lib/enums"
 import { ZodError } from "zod"
 import { advanceDonationStatus } from "@/lib/services/donation.service"
+import { sendDonationSubmittedNotifications } from "@/lib/services/donation-approval.service"
 import { revalidatePath } from "next/cache"
 
 export interface ServerActionResult<T = unknown> {
@@ -52,7 +53,7 @@ export async function getDonationFormOptions(): Promise<
 
 export async function submitDonationAction(
   values: CreateDonationSchemaType
-): Promise<ServerActionResult<{ id: number }>> {
+): Promise<ServerActionResult<{ id: number; emailSent: boolean }>> {
   try {
     const validated = CreateDonationSchema.parse(values)
     const user = await getCurrentUser()
@@ -124,7 +125,11 @@ export async function submitDonationAction(
       select: { id: true },
     })
 
-    return { success: true, data: { id: donation.id } }
+    // Email-based approval: mint a single-use token and notify the manager.
+    // Never blocks or rolls back the saved donation — failures are reported only.
+    const emailResult = await sendDonationSubmittedNotifications(donation.id)
+
+    return { success: true, data: { id: donation.id, emailSent: emailResult.emailSent } }
   } catch (err: any) {
     if (err instanceof ZodError) {
       const fieldErrors: Record<string, string[]> = {}

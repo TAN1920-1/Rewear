@@ -38,11 +38,11 @@ async function main() {
   console.log("  1/22 Creating NGO...");
   const ngo = await prisma.nGO.create({
     data: {
-      name: "ReWear Foundation",
+      name: "Mangaldham Bahuuddeshiy Samajik Sanstha",
       tagline: "Giving clothes a second life, one donation at a time",
-      address: "123 Charity Lane, Sector 17, Mumbai, Maharashtra 400001",
-      phone: "+91 98765 43210",
-      email: "info@rewearfoundation.org",
+      address: "Sukhsagar Nagar, Katraj, Pune, Maharashtra",
+      phone: "7219185111",
+      email: "vijug0027@gmail.com",
       website: "https://rewearfoundation.org",
       logoUrl: "https://rewearfoundation.org/logo.png",
       receiptColor: "#2563EB",

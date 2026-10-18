@@ -75,7 +75,7 @@ export function DonationFormClient({
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [successData, setSuccessData] = useState<{ id: number; donationId?: string } | null>(null)
+  const [successData, setSuccessData] = useState<{ id: number; emailSent?: boolean } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
 
   const form = useForm<CreateDonationSchemaType>({
@@ -141,7 +141,7 @@ export function DonationFormClient({
         return
       }
 
-      setSuccessData({ id: result.data!.id })
+      setSuccessData({ id: result.data!.id, emailSent: result.data!.emailSent })
       setStep(5)
     } catch (e: any) {
       setFormError(e?.message ?? "Unexpected error submitting donation.")
@@ -198,6 +198,12 @@ export function DonationFormClient({
             You can track your donation anytime using the ID above. NGO staff will review and
             update its status as it moves through processing.
           </p>
+          {successData.emailSent === false && (
+            <p className="text-xs text-amber-700 max-w-md mx-auto">
+              Your donation was saved, but the notification email could not be sent right now.
+              The NGO team can still review it from their dashboard.
+            </p>
+          )}
         </CardContent>
         <CardFooter className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button

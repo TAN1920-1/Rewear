@@ -16,7 +16,7 @@ import {
   HeartHandshake,
 } from "lucide-react"
 import { getCurrentUser, requireRole } from "@/lib/auth/guards"
-import { getDonationById } from "@/lib/services/donation.service"
+import { getDonationById, isDonationOwner } from "@/lib/services/donation.service"
 import { UserRole } from "@/lib/enums"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -91,7 +91,7 @@ export default async function DonationDetailPage({
     notFound()
   }
 
-  if (donation.donorId !== currentUser?.id) {
+  if (!isDonationOwner(currentUser, donation)) {
     notFound()
   }
 

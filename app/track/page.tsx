@@ -19,18 +19,12 @@ import {
   Clock,
   User,
   Hash,
-  Building2,
   Sparkles,
   ArrowRight,
   Check,
   X,
 } from "lucide-react"
-import { fetchDonationByTrackingId } from "@/lib/actions/track.actions"
-import type { Donation, DonationStatusHistory } from "@prisma/client"
-
-type DonationWithDetails = Donation & {
-  statusHistory: (DonationStatusHistory & { changedByUser: { name: string } })[]
-}
+import { fetchDonationByTrackingId, type PublicDonationTracking } from "@/lib/actions/track.actions"
 
 const STATUS_ORDER: DonationStatus[] = [
   DonationStatus.SUBMITTED,
@@ -55,7 +49,7 @@ function getStatusBadgeClass(status: string) {
   return "bg-amber-100 text-amber-700 border-amber-200"
 }
 
-function StatusTimeline({ donation }: { donation: DonationWithDetails }) {
+function StatusTimeline({ donation }: { donation: PublicDonationTracking }) {
   const currentStatus = donation.currentStatus
   const isRejected = currentStatus === DonationStatus.REJECTED
 
@@ -116,8 +110,7 @@ function StatusTimeline({ donation }: { donation: DonationWithDetails }) {
                 {historyEntry && (
                   <>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      {formatDateTime(historyEntry.createdAt)} · by{" "}
-                      {historyEntry.changedByUser?.name ?? "System"}
+                      {formatDateTime(historyEntry.createdAt)}
                     </p>
                     {historyEntry.note && (
                       <p className="text-xs text-slate-600 mt-1 bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
@@ -141,7 +134,7 @@ function StatusTimeline({ donation }: { donation: DonationWithDetails }) {
 export default function TrackPage() {
   const { toast } = useToast()
   const [trackingId, setTrackingId] = useState("")
-  const [donation, setDonation] = useState<DonationWithDetails | null>(null)
+  const [donation, setDonation] = useState<PublicDonationTracking | null>(null)
   const [searched, setSearched] = useState(false)
   const [isPending, startTransition] = useTransition()
 
@@ -150,7 +143,7 @@ export default function TrackPage() {
     if (!trackingId.trim()) {
       toast({
         title: "Missing tracking ID",
-        description: "Please enter a donation tracking ID like DON-2026-000001.",
+        description: "Please enter a donation tracking ID like DON-2026-7F3K9Q2M.",
       })
       return
     }
@@ -212,7 +205,7 @@ export default function TrackPage() {
                   <Input
                     id="trackingId"
                     type="text"
-                    placeholder="e.g. DON-2026-000001"
+                    placeholder="e.g. DON-2026-7F3K9Q2M"
                     value={trackingId}
                     onChange={(e) => setTrackingId(e.target.value)}
                     className="flex-1 h-11"
@@ -252,7 +245,7 @@ export default function TrackPage() {
             </div>
             <h3 className="text-xl font-semibold text-slate-900">No donation found</h3>
             <p className="mt-2 text-slate-600">
-              Double-check the tracking ID format. It should look like <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">DON-2026-000001</code>.
+              Double-check the tracking ID format. It should look like <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">DON-2026-7F3K9Q2M</code>.
             </p>
           </Card>
         )}
@@ -286,17 +279,7 @@ export default function TrackPage() {
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-wider text-slate-500">Donor</p>
-                      <p className="font-medium text-slate-900">{donation.donorName}</p>
-                      <p className="text-sm text-slate-500">{donation.donorEmail}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-teal-50 text-teal-600">
-                      <Building2 className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-slate-500">NGO ID</p>
-                      <p className="font-medium text-slate-900">#{donation.ngoId}</p>
+                      <p className="font-medium text-slate-900">{donation.donorDisplayName}</p>
                     </div>
                   </div>
                 </div>

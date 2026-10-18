@@ -43,6 +43,6 @@ export async function respondToDonationApprovalAction(
     return result
   } catch (err: any) {
     console.error("respondToDonationApprovalAction error", err)
-    return { success: false, error: err?.message ?? "Unexpected error. Please try again." }
+    return { success: false, error: "Unexpected error. Please try again." }
   }
 }

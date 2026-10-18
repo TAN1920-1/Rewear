@@ -11,10 +11,11 @@ import {
 } from "../lib/enums";
 import * as bcrypt from "bcryptjs";
 import { addDays, addHours, subMonths, subWeeks, subDays, format } from "date-fns";
+import { assertDemoSeedAllowed, resolveSeedPassword } from "../lib/utils/seed-guard";
+import { generateDonationId } from "../lib/utils/donation-id";
 
 const prisma = new PrismaClient();
 
-const PASSWORD = "Password123!";
 const SALT_ROUNDS = 10;
 
 function pickRandom<T>(arr: T[]): T {
@@ -25,15 +26,17 @@ function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function generateDonationId(n: number): string {
-  return `DON-2026-${String(n).padStart(6, "0")}`;
-}
-
 async function main() {
-  const hashedPassword = await bcrypt.hash(PASSWORD, SALT_ROUNDS);
+  // Never seed demo accounts against production (or without explicit opt-in).
+  assertDemoSeedAllowed();
+
+  // Passwords are NEVER hard-coded: use SEED_DEMO_PASSWORD if provided,
+  // otherwise a strong random one is generated for this run only.
+  const { password, generated } = resolveSeedPassword();
+  const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
   const now = new Date();
 
-  console.log("🌱 Seeding database...");
+  console.log("🌱 Seeding database... (demo/test mode)");
 
   console.log("  1/22 Creating NGO...");
   const ngo = await prisma.nGO.create({
@@ -297,7 +300,7 @@ async function main() {
 
     const donation = await prisma.donation.create({
       data: {
-        donationId: generateDonationId(d.idx),
+        donationId: generateDonationId(d.createdDate),
         donorId: d.donorId,
         ngoId: ngo.id,
         donorName: d.donorName,
@@ -883,6 +886,27 @@ async function main() {
   console.log(`  Notifications: ${notifications.length} (mix read/unread)`);
   console.log(`  DonationReceipts: ${receipts.length}`);
   console.log(`  AuditLogs: ${auditLogs.length}`);
+
+  // Demo credentials are printed ONLY because this branch is unreachable in
+  // production (assertDemoSeedAllowed aborts first). Nothing is logged when the
+  // operator supplied their own SEED_DEMO_PASSWORD.
+  if (generated) {
+    console.log(
+      [
+        "",
+        "───────────────── DEMO CREDENTIALS (development only) ─────────────────",
+        `  Demo password : ${password}`,
+        "  Accounts      : admin@rewear.org, staff.arjun@rewear.org,",
+        "                  staff.meera@rewear.org, rahul.gupta@gmail.com, …",
+        "  This password was randomly generated for this run and is shown once.",
+        "  Provide SEED_DEMO_PASSWORD to choose your own (kept out of the logs).",
+        "──────────────────────────────────────────────────────────────────────",
+        "",
+      ].join("\n")
+    );
+  } else {
+    console.log("  Demo password supplied via SEED_DEMO_PASSWORD (not logged).");
+  }
 }
 
 main()

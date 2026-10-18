@@ -75,7 +75,11 @@ export function DonationFormClient({
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [successData, setSuccessData] = useState<{ id: number; emailSent?: boolean } | null>(null)
+  const [successData, setSuccessData] = useState<{
+    id: number
+    donationId: string
+    emailSent?: boolean
+  } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
 
   const form = useForm<CreateDonationSchemaType>({
@@ -141,7 +145,11 @@ export function DonationFormClient({
         return
       }
 
-      setSuccessData({ id: result.data!.id, emailSent: result.data!.emailSent })
+      setSuccessData({
+        id: result.data!.id,
+        donationId: result.data!.donationId,
+        emailSent: result.data!.emailSent,
+      })
       setStep(5)
     } catch (e: any) {
       setFormError(e?.message ?? "Unexpected error submitting donation.")
@@ -187,7 +195,7 @@ export function DonationFormClient({
           <div className="glass inline-flex flex-col items-center gap-2 rounded-2xl border-white/50 px-8 py-6">
             <p className="text-xs uppercase tracking-widest text-slate-500">Donation ID</p>
             <p className="text-2xl font-bold tracking-tight text-slate-900">
-              DON-{new Date().getFullYear()}-{String(successData.id).padStart(6, "0")}
+              {successData.donationId}
             </p>
             <Badge variant="outline" className="mt-2 border-emerald-200 bg-emerald-50 text-emerald-700">
               <Sparkles className="mr-1 h-3 w-3" />

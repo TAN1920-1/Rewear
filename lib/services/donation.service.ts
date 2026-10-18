@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db/prisma"
 import type { DonationStatus } from "@/lib/enums"
 import { createNotification } from "@/lib/services/notification.service"
+import { generateDonationId, isUniqueConstraintError } from "@/lib/utils/donation-id"
+
+/** Bounded retries when a randomly generated tracking ID happens to collide. */
+const DONATION_ID_MAX_ATTEMPTS = 5
 
 export async function getDonationsByDonorId(
   donorId: number,
@@ -86,6 +90,21 @@ export async function getDonationById(id: number) {
   })
 }
 
+/**
+ * Server-side ownership rule for private donation records.
+ *
+ * A donation is private to its donor. NGO staff/admin reach records through
+ * their authenticated admin flows, never the donor portal. This predicate is
+ * the single source of truth for the donor detail page and derives identity
+ * only from the session — never from a client-supplied identifier.
+ */
+export function isDonationOwner(
+  user: { id: number } | null | undefined,
+  donation: { donorId: number }
+): boolean {
+  return Boolean(user) && donation.donorId === user!.id
+}
+
 export async function getDonationByDonationId(donationId: string) {
   return prisma.donation.findUnique({
     where: { donationId },
@@ -130,81 +149,92 @@ export interface CreateDonationPayload {
 export async function createDonation(payload: CreateDonationPayload) {
   const totalItems = payload.items.reduce((sum, item) => sum + item.quantity, 0)
 
-  const donationCount = await prisma.donation.count()
-  const year = new Date().getFullYear()
-  const donationId = `DON-${year}-${String(donationCount + 1).padStart(6, "0")}`
+  // Retry only on the (rare) tracking-ID collision. Each attempt runs in its
+  // own transaction, so a failed attempt leaves no orphaned items or history.
+  for (let attempt = 0; attempt < DONATION_ID_MAX_ATTEMPTS; attempt++) {
+    const donationId = generateDonationId()
 
-  return prisma.$transaction(async (tx: any) => {
-    const donation = await tx.donation.create({
-      data: {
-        donationId,
-        donorId: payload.donorId,
-        ngoId: payload.ngoId,
-        donorName: payload.donorName,
-        donorEmail: payload.donorEmail,
-        donorPhone: payload.donorPhone,
-        pickupAddress: payload.pickupAddress,
-        notes: payload.notes,
-        campaignId: payload.campaignId,
-        totalItems,
-        currentStatus: "SUBMITTED",
-        items: {
-          create: payload.items.map((item) => ({
-            categoryId: item.categoryId,
-            size: item.size,
-            condition: item.condition,
-            quantity: item.quantity,
-            description: item.description,
-          })),
-        },
-        statusHistory: {
-          create: {
-            status: "SUBMITTED",
-            changedBy: payload.donorId,
-            note: "Donation submitted by donor",
-          },
-        },
-        ...(payload.campaignId
-          ? {
-              campaignDonations: {
-                create: {
-                  campaignId: payload.campaignId,
-                  itemsCount: totalItems,
-                },
+    try {
+      return await prisma.$transaction(async (tx: any) => {
+        const donation = await tx.donation.create({
+          data: {
+            donationId,
+            donorId: payload.donorId,
+            ngoId: payload.ngoId,
+            donorName: payload.donorName,
+            donorEmail: payload.donorEmail,
+            donorPhone: payload.donorPhone,
+            pickupAddress: payload.pickupAddress,
+            notes: payload.notes,
+            campaignId: payload.campaignId,
+            totalItems,
+            currentStatus: "SUBMITTED",
+            items: {
+              create: payload.items.map((item) => ({
+                categoryId: item.categoryId,
+                size: item.size,
+                condition: item.condition,
+                quantity: item.quantity,
+                description: item.description,
+              })),
+            },
+            statusHistory: {
+              create: {
+                status: "SUBMITTED",
+                changedBy: payload.donorId,
+                note: "Donation submitted by donor",
               },
-            }
-          : {}),
-      },
-      include: { items: true },
-    })
+            },
+            ...(payload.campaignId
+              ? {
+                  campaignDonations: {
+                    create: {
+                      campaignId: payload.campaignId,
+                      itemsCount: totalItems,
+                    },
+                  },
+                }
+              : {}),
+          },
+          include: { items: true },
+        })
 
-    const ngoStaff = await tx.user.findMany({
-      where: { ngoId: payload.ngoId, role: { in: ["NGO_ADMIN", "NGO_STAFF"] } },
-      select: { id: true },
-    })
-    for (const s of ngoStaff) {
-      await tx.notification.create({
-        data: {
-          userId: s.id,
-          title: "New donation submitted",
-          message: `Donation ${donationId} from ${payload.donorName} with ${totalItems} items.`,
-          relatedType: "donation",
-          relatedId: donation.id,
-        },
+        const ngoStaff = await tx.user.findMany({
+          where: { ngoId: payload.ngoId, role: { in: ["NGO_ADMIN", "NGO_STAFF"] } },
+          select: { id: true },
+        })
+        for (const s of ngoStaff) {
+          await tx.notification.create({
+            data: {
+              userId: s.id,
+              title: "New donation submitted",
+              message: `Donation ${donationId} from ${payload.donorName} with ${totalItems} items.`,
+              relatedType: "donation",
+              relatedId: donation.id,
+            },
+          })
+        }
+        await tx.notification.create({
+          data: {
+            userId: payload.donorId,
+            title: "Donation received",
+            message: `Thank you! Your donation ${donationId} has been registered.`,
+            relatedType: "donation",
+            relatedId: donation.id,
+          },
+        })
+
+        return donation
       })
+    } catch (err) {
+      if (isUniqueConstraintError(err) && attempt < DONATION_ID_MAX_ATTEMPTS - 1) {
+        continue
+      }
+      throw err
     }
-    await tx.notification.create({
-      data: {
-        userId: payload.donorId,
-        title: "Donation received",
-        message: `Thank you! Your donation ${donationId} has been registered.`,
-        relatedType: "donation",
-        relatedId: donation.id,
-      },
-    })
+  }
 
-    return donation
-  })
+  throw new Error("Could not allocate a unique donation ID.")
 }
 
 export interface SearchDonationsParams {

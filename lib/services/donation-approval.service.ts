@@ -9,6 +9,18 @@ import {
 
 export type ApprovalAction = "approve" | "reject"
 
+/**
+ * An error whose message is safe (and useful) to show the manager.
+ * Any other error type is treated as internal and replaced by a generic
+ * message so database/provider details never reach the browser.
+ */
+export class UserFacingApprovalError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "UserFacingApprovalError"
+  }
+}
+
 /** How long an emailed approval link stays valid (default 7 days). */
 const DEFAULT_TTL_HOURS = 168
 
@@ -232,7 +244,7 @@ export async function respondToDonationApproval(
         data: { usedAt: new Date(), action, actedByIp: ip ?? null },
       })
       if (claim.count !== 1) {
-        throw new Error(
+        throw new UserFacingApprovalError(
           "This link is no longer valid — it may have already been used or has expired."
         )
       }
@@ -241,7 +253,7 @@ export async function respondToDonationApproval(
         where: { tokenHash },
         include: { donation: true },
       })
-      if (!token) throw new Error("Approval request not found.")
+      if (!token) throw new UserFacingApprovalError("Approval request not found.")
 
       const donation = await tx.donation.findUnique({
         where: { id: token.donationId },
@@ -255,11 +267,11 @@ export async function respondToDonationApproval(
           donorName: true,
         },
       })
-      if (!donation) throw new Error("Donation not found.")
+      if (!donation) throw new UserFacingApprovalError("Donation not found.")
 
       // 2. Only a still-pending (SUBMITTED) donation may be decided.
       if (donation.currentStatus !== DonationStatus.SUBMITTED) {
-        throw new Error(
+        throw new UserFacingApprovalError(
           `This donation has already been processed (current status: ${donation.currentStatus}).`
         )
       }
@@ -270,7 +282,10 @@ export async function respondToDonationApproval(
         select: { id: true },
         orderBy: { id: "asc" },
       })
-      if (!actor) throw new Error("No NGO administrator account is available to record this action.")
+      if (!actor)
+        throw new UserFacingApprovalError(
+          "No NGO administrator account is available to record this action."
+        )
 
       await tx.donation.update({
         where: { id: donation.id },
@@ -312,7 +327,14 @@ export async function respondToDonationApproval(
       donorName = donation.donorName
     })
   } catch (err: any) {
-    return { success: false, error: err?.message ?? "Failed to update the donation." }
+    // Curated, user-facing messages are surfaced; anything else (Prisma,
+    // provider, network) is logged server-side and replaced with a generic
+    // message so internals never reach the browser.
+    if (err instanceof UserFacingApprovalError) {
+      return { success: false, error: err.message }
+    }
+    console.error("respondToDonationApproval error", err)
+    return { success: false, error: "Unable to update the donation right now. Please try again." }
   }
 
   // 4. Notify the donor (best-effort — the decision is already committed).

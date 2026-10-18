@@ -13,6 +13,16 @@ export class LogEmailProvider implements IEmailProvider {
 
   async send({ to, subject, html, text }: SendEmailInput): Promise<void> {
     const recipients = Array.isArray(to) ? to.join(", ") : to
+
+    // Message bodies contain single-use approval links (i.e. live tokens).
+    // They may be printed during local development to exercise the workflow,
+    // but NEVER in production — a misconfigured deployment must not leak
+    // approval tokens into logs. Only a delivery summary is emitted there.
+    const body =
+      process.env.NODE_ENV === "production"
+        ? "[body suppressed in production — configure SMTP_* so this message is delivered instead of logged]"
+        : text ?? html
+
     // eslint-disable-next-line no-console
     console.warn(
       [
@@ -21,7 +31,7 @@ export class LogEmailProvider implements IEmailProvider {
         `To      : ${recipients}`,
         `Subject : ${subject}`,
         "",
-        text ?? html,
+        body,
         "──────────────────────────────────────────────────────────────────────────────────────────────",
         "Configure SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASSWORD (and EMAIL_FROM) to send real email.",
         "",

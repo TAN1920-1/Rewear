@@ -15,6 +15,7 @@ A full-stack web platform built for **Mangaldham Bahuuddeshiy Samajik Sanstha**,
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [Available Scripts](#available-scripts)
+- [Testing](#testing)
 - [Demo Accounts](#demo-accounts)
 - [Deployment](#deployment)
 - [Team & Contributions](#team--contributions)
@@ -227,8 +228,11 @@ Fill in `.env` — see the [Environment Variables](#environment-variables) secti
 
 ```bash
 npx prisma migrate deploy   # apply migrations
-npm run seed                # optional: load demo data
+SEED_DEMO_USERS=true npm run seed   # optional: load demo data (development only)
 ```
+
+> `npm run seed` refuses to create demo accounts unless `SEED_DEMO_USERS=true`
+> and `NODE_ENV` is **not** `production`. See [Demo Accounts](#demo-accounts).
 
 ### 5. Run
 
@@ -268,6 +272,8 @@ All variables are documented in [`.env.example`](.env.example) — **never commi
 | `MANAGER_EMAIL` | ✅ | Inbox that receives approval requests (comma-separated for several) |
 | `APPROVAL_TOKEN_TTL_HOURS` | ⬜ | Approval-link lifetime (default `168` = 7 days) |
 | `NGO_DISPLAY_NAME` | ⬜ | Display name used inside donor emails |
+| `SEED_DEMO_USERS` | ⬜ | Set to `true` to allow demo-account seeding. **Ignored when `NODE_ENV=production`.** |
+| `SEED_DEMO_PASSWORD` | ⬜ | Password used for seeded demo users (≥ 8 chars). If unset, a random one is generated. **Never set this in production.** |
 
 **If `SMTP_HOST` / `SMTP_USER` / `SMTP_PASSWORD` are left blank, the app runs in
 "log mode"** — emails are printed to the server console instead of being sent.
@@ -294,17 +300,46 @@ That makes local development possible without a mail account.
 | `npm run build` | Production build |
 | `npm start` | Serve the production build |
 | `npm run lint` | Run ESLint |
-| `npm run seed` | Seed the database with demo data |
+| `npm test` | Run the automated regression suite (Vitest) |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run seed` | Seed the database with demo data (development only) |
 | `npx prisma studio` | Browse the database in a GUI |
 | `npx prisma migrate dev` | Create and apply a new migration |
 | `npx tsc --noEmit` | Type-check without emitting |
 
 ---
 
+## Testing
+
+```bash
+npm test             # automated regression suite (Vitest, fully mocked)
+npm run test:watch   # watch mode
+```
+
+The automated suite needs no database, SMTP account or network — every external
+dependency is mocked, so it is safe to run anywhere. A full manual walkthrough
+(registration → donation → approval) for a local/staging environment, plus the
+read-only production checks, is documented in **[docs/TESTING.md](docs/TESTING.md)**.
+
+---
+
 ## Demo Accounts
 
-`npm run seed` creates demo users. The password for all seeded accounts is defined
-in [`prisma/seed.ts`](prisma/seed.ts).
+Demo users are **development-only** and are never created automatically. `prisma/seed.ts`
+refuses to run unless both conditions hold:
+
+1. `NODE_ENV` is **not** `production`, and
+2. `SEED_DEMO_USERS=true` is explicitly set.
+
+If either check fails the script aborts before touching the database. There is no
+longer any hardcoded password in the repository — pick one with `SEED_DEMO_PASSWORD`
+(≥ 8 chars) or let the script generate a random password, which it prints **once** to
+the console when running outside production.
+
+```bash
+# development only
+SEED_DEMO_USERS=true SEED_DEMO_PASSWORD="$(openssl rand -base64 18)" npm run seed
+```
 
 | Role | Email |
 |---|---|
@@ -312,8 +347,35 @@ in [`prisma/seed.ts`](prisma/seed.ts).
 | NGO Staff | `staff.arjun@rewear.org`, `staff.meera@rewear.org` |
 | Donors | `rahul.gupta@gmail.com`, `ananya.singh@gmail.com`, … |
 
-> ⚠️ **These are weak, publicly-known demo credentials. Delete or rotate them before
-> going to production.**
+> ⚠️ **Never run the seed against the production database.** Public registration always
+> assigns the `DONOR` role server-side — it can never create an `NGO_ADMIN`/`NGO_STAFF`
+> account.
+
+### If demo accounts may already exist in production
+
+Earlier versions shipped a shared, publicly known password. Follow this procedure to
+check and remediate — **do not delete rows blindly**, and take a backup first.
+
+1. **Identify** — in the Supabase SQL editor, list accounts whose email matches the
+   documented demo addresses:
+   ```sql
+   SELECT id, email, role, "createdAt", "updatedAt"
+   FROM "User"
+   WHERE email IN ('admin@rewear.org','staff.arjun@rewear.org','staff.meera@rewear.org')
+      OR email LIKE '%@rewear.org'
+   ORDER BY role, email;
+   ```
+2. **Assess** — for each hit decide whether it is a real staff account or a leftover
+   demo login. Check `Donation` rows referencing that `id` before changing anything.
+3. **Rotate** — change the password through the normal admin flow (or the password
+   hashing helper used by the app, `hashPassword` in `lib/auth/guards.ts`). Never lower
+   a real staff account's privileges without the NGO owner's confirmation.
+4. **Disable instead of delete** — if the account is unused, prefer keeping the row and
+   rotating the password so historic `Donation.donorId` references stay intact. Only
+   remove an account once you have confirmed it owns no donations.
+5. **Verify** — confirm a login attempt with the old password now fails.
+
+Rotating a password is **manual production work** and is intentionally not automated.
 
 ---
 
@@ -367,9 +429,21 @@ reviewed and integrated every contribution into the final codebase.
   placeholder names only.
 - Server secrets (`SUPABASE_SERVICE_ROLE_KEY`, SMTP credentials, `AUTH_SECRET`) are used
   exclusively in server code and never exposed to the browser.
-- Approval tokens are hashed, single-use and expiring.
+- Approval tokens are SHA-256 hashed, single-use and expiring; the raw token only ever
+  appears inside the approval email.
 - NextAuth middleware guards `/admin/**` and `/donor/**`; server actions additionally
-  re-check roles on every call.
+  re-check roles on every call, and donation ownership is derived from the server
+  session — never from a client-supplied user id.
+- Public registration is hard-coded to the `DONOR` role; the role field is stripped from
+  the request by the Zod schema, so a client cannot request a privileged role.
+- The public tracking page (`/track`) exposes only the tracking id, current status,
+  item count, a masked donor name, and status history — no email, phone, address, notes
+  or NGO staff identities.
+- Tracking ids are generated server-side with a CSPRNG (`DON-YYYY-XXXXXXXX`) and backed
+  by a database unique constraint, so concurrent submissions can never collide.
+- Error messages returned to clients are generic; database errors and stack traces are
+  logged server-side only. Email bodies (which contain approval tokens) are suppressed
+  in production logs.
 - Before going live: **rotate the seeded demo password**, use a dedicated mail-sending
   account, and verify a sending domain so mail can reach donors outside your own inbox.
 

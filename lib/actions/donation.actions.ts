@@ -65,6 +65,9 @@ export async function getDonationFormOptions(): Promise<
 export async function submitDonationAction(
   values: CreateDonationSchemaType
 ): Promise<ServerActionResult<{ id: number; donationId: string; emailSent: boolean }>> {
+  if (process.env.NODE_ENV === "development") {
+    console.log("submitDonationAction received values:", JSON.stringify(values, null, 2))
+  }
   try {
     const validated = CreateDonationSchema.parse(values)
     const user = await getCurrentUser()
@@ -147,7 +150,7 @@ export async function submitDonationAction(
           select: { id: true, donationId: true },
         })
         break
-      } catch (err) {
+      } catch (err: any) {
         if (isUniqueConstraintError(err) && attempt < DONATION_ID_MAX_ATTEMPTS - 1) {
           continue
         }
@@ -186,7 +189,9 @@ export async function submitDonationAction(
     console.error("submitDonationAction error", err)
     return {
       success: false,
-      error: "Failed to submit donation. Please try again.",
+      error: process.env.NODE_ENV === "development" 
+        ? `Failed to submit donation: ${err.message || String(err)}`
+        : "Failed to submit donation. Please try again.",
     }
   }
 }

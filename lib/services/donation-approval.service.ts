@@ -13,11 +13,12 @@ export type ApprovalAction = "approve" | "reject"
 const DEFAULT_TTL_HOURS = 168
 
 export function getSiteUrl(): string {
-  return (
+  const url =
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.AUTH_URL ||
-    "http://localhost:3000"
-  ).replace(/\/$/, "")
+    (typeof window !== "undefined" ? window.location.origin : "")
+  
+  return url.replace(/\/$/, "")
 }
 
 /** Only the hash is persisted — the raw token lives solely in the email link. */

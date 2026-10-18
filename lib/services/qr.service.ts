@@ -33,10 +33,13 @@ export async function generateQRSVG(text: string, size = 256): Promise<string> {
   }
 }
 
-export function buildDonationTrackingUrl(donationId: string, siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000") {
-  return `${siteUrl}/track?don=${encodeURIComponent(donationId)}`
+export function buildDonationTrackingUrl(donationId: string, siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "") {
+  // If siteUrl is empty, return a relative path which works for in-app links
+  if (!siteUrl) return `/track?don=${encodeURIComponent(donationId)}`
+  return `${siteUrl.replace(/\/$/, "")}/track?don=${encodeURIComponent(donationId)}`
 }
 
-export function buildInventoryBatchUrl(batchId: string, siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000") {
-  return `${siteUrl}/admin/inventory?batch=${encodeURIComponent(batchId)}`
+export function buildInventoryBatchUrl(batchId: string, siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "") {
+  if (!siteUrl) return `/admin/inventory?batch=${encodeURIComponent(batchId)}`
+  return `${siteUrl.replace(/\/$/, "")}/admin/inventory?batch=${encodeURIComponent(batchId)}`
 }

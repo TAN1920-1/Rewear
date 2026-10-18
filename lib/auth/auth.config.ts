@@ -30,7 +30,27 @@ export const authConfig = {
       const { pathname } = request.nextUrl
       const isProtected =
         pathname.startsWith("/admin") || pathname.startsWith("/donor")
-      return isProtected ? isLoggedIn : true
+      
+      if (isProtected && !isLoggedIn) {
+        // Resolve the origin from the proxy headers instead of `request.url`.
+        // NextAuth rewrites the incoming request URL with `AUTH_URL` before this
+        // callback runs (see next-auth/lib/env.js), so a stale
+        // `AUTH_URL=http://localhost:3000` set in the hosting dashboard would
+        // bounce production visitors to localhost. `x-forwarded-*` always carry
+        // the real public host; `host` covers local development.
+        const host =
+          request.headers.get("x-forwarded-host") ?? request.headers.get("host")
+        const proto = request.headers.get("x-forwarded-proto")
+        const origin = host
+          ? `${proto ?? (host.includes("localhost") ? "http" : "https")}://${host}`
+          : request.nextUrl.origin
+
+        const url = new URL("/login", origin)
+        url.searchParams.set("callbackUrl", pathname)
+        return Response.redirect(url)
+      }
+      
+      return true
     },
     async jwt({ token, user }) {
       if (user) {

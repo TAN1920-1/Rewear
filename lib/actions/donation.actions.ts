@@ -102,10 +102,11 @@ export async function submitDonationAction(
     // On the rare unique-constraint collision we simply draw a new ID.
     let donation: { id: number; donationId: string } | undefined
     for (let attempt = 0; attempt < DONATION_ID_MAX_ATTEMPTS; attempt++) {
+      const donationId = generateDonationId();
       try {
         donation = await prisma.donation.create({
           data: {
-            donationId: generateDonationId(),
+            donationId,
             donorId: user.id,
             ngoId,
             donorName: validated.donorName,

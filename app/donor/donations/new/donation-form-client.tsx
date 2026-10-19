@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -124,6 +124,18 @@ export function DonationFormClient({
   function prevStep() {
     setFormError(null)
     setStep((s) => Math.max(1, s - 1))
+  }
+
+  // Guards against premature submission: the wizard must reach the Review
+  // step (4) before the form is allowed to submit. Any stray submit event
+  // while the steps are in progress is converted into "advance to next step".
+  function handleFormSubmit(e: FormEvent<HTMLFormElement>) {
+    if (step < 4) {
+      e.preventDefault()
+      nextStep()
+      return
+    }
+    void form.handleSubmit(onSubmit)(e)
   }
 
   async function onSubmit(values: CreateDonationSchemaType) {
@@ -281,7 +293,7 @@ export function DonationFormClient({
       </Card>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleFormSubmit} className="space-y-6">
           {formError && (
             <Alert variant="destructive" className="glass border-rose-200 bg-rose-50 text-rose-800">
               <AlertCircle className="h-4 w-4" />
@@ -768,6 +780,7 @@ export function DonationFormClient({
 
             {step < 4 ? (
               <Button
+                key="wizard-action-next"
                 type="button"
                 onClick={nextStep}
                 className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25"
@@ -777,6 +790,7 @@ export function DonationFormClient({
               </Button>
             ) : (
               <Button
+                key="wizard-action-submit"
                 type="submit"
                 disabled={isSubmitting}
                 className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25"

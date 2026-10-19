@@ -1,8 +1,9 @@
 import Link from "next/link"
-import { Heart, LayoutDashboard, Gift, PlusCircle, Bell, Home } from "lucide-react"
+import { Heart, LayoutDashboard, Gift, PlusCircle, Bell, Home, LogOut } from "lucide-react"
 import { requireRole } from "@/lib/auth/guards"
 import { Button } from "@/components/ui/button"
 import { UserRole } from "@/lib/enums"
+import { signOut } from "@/lib/auth/auth"
 
 export default async function DonorLayout({
   children,
@@ -12,6 +13,11 @@ export default async function DonorLayout({
   // Identity comes from the signed JWT (no DB round-trip) so the shell can
   // stream immediately instead of blocking on a ~remote query.
   const user = await requireRole(UserRole.DONOR)
+
+  async function handleSignOut() {
+    "use server"
+    await signOut({ redirectTo: "/login" })
+  }
 
   const navItems = [
     {
@@ -65,6 +71,17 @@ export default async function DonorLayout({
                 <span className="hidden sm:inline ml-1">Home</span>
               </Link>
             </Button>
+            <form action={handleSignOut}>
+              <Button
+                type="submit"
+                variant="ghost"
+                size="sm"
+                className="h-11 sm:h-9 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="sr-only sm:not-sr-only sm:ml-1">Sign Out</span>
+              </Button>
+            </form>
           </div>
         </div>
       </header>

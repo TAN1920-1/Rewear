@@ -1,0 +1,5 @@
+Contact: mailto:vijug0027@gmail.com
+Expires: 2027-12-31T00:00:00.000Z
+Preferred-Languages: en, mr, hi
+Canonical: https://rewear-rust.vercel.app/.well-known/security.txt
+Policy: https://rewear-rust.vercel.app/

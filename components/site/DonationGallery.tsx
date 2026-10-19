@@ -2,33 +2,43 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 
 /**
- * Responsive donation gallery built from every image shipped in the project's
- * `images` folder (copied to `public/images`). The asymmetric grid collapses
- * gracefully from 4 columns → 2 columns on mobile.
+ * Responsive donation gallery built from the optimised images shipped in
+ * `public/images`. The asymmetric grid collapses gracefully from 4 columns →
+ * 2 columns on mobile.
+ *
+ * Every image declares intrinsic `width`/`height` so the browser can reserve
+ * the correct aspect ratio and avoid layout shift (CLS).
  */
 const GALLERY = [
   {
-    src: "/images/gallery-1.jpeg",
+    src: "/images/gallery-1.webp",
     alt: "Donated clothes collected for the NGO clothing drive",
+    width: 1200,
+    height: 1600,
     className: "col-span-2 row-span-2",
     sizes: "(max-width: 768px) 100vw, 50vw",
-    priority: true,
   },
   {
-    src: "/images/gallery-2.jpeg",
+    src: "/images/gallery-2.webp",
     alt: "Community members with donated clothing items",
+    width: 1200,
+    height: 1600,
     className: "col-span-2 row-span-1",
     sizes: "(max-width: 768px) 100vw, 50vw",
   },
   {
-    src: "/images/gallery-3.jpeg",
+    src: "/images/gallery-3.webp",
     alt: "Volunteers preparing donated clothes for distribution",
+    width: 1600,
+    height: 1200,
     className: "col-span-1 row-span-1",
     sizes: "(max-width: 768px) 50vw, 25vw",
   },
   {
-    src: "/images/mangaldham.jpeg",
+    src: "/images/mangaldham.webp",
     alt: "Mangaldham Bahuuddeshiy Samajik Sanstha activity",
+    width: 1600,
+    height: 1163,
     className: "col-span-1 row-span-1",
     sizes: "(max-width: 768px) 50vw, 25vw",
   },
@@ -59,11 +69,12 @@ export function DonationGallery() {
             <Image
               src={img.src}
               alt={img.alt}
-              fill
+              width={img.width}
+              height={img.height}
               sizes={img.sizes}
-              quality={90}
-              priority={"priority" in img ? img.priority : false}
-              className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+              quality={85}
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/45 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           </figure>

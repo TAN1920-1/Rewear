@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "node:crypto"
+import { headers } from "next/headers"
 import { prisma } from "@/lib/db/prisma"
 import { DonationStatus } from "@/lib/enums"
 import {
@@ -24,13 +25,56 @@ export class UserFacingApprovalError extends Error {
 /** How long an emailed approval link stays valid (default 7 days). */
 const DEFAULT_TTL_HOURS = 168
 
+function isLocalhostUrl(url: string): boolean {
+  try {
+    const { hostname } = new URL(url)
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0"
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Absolute origin used to build links inside emails.
+ *
+ * Emailed links must point at the real, publicly-reachable site. The classic
+ * failure mode is deploying with `NEXT_PUBLIC_SITE_URL` (or `AUTH_URL`) still
+ * set to `http://localhost:3000`, which mails out dead localhost links.
+ * Resolution order:
+ *   1. An explicit, non-localhost configuration (canonical production URL).
+ *   2. The incoming request origin (`x-forwarded-host`/`x-forwarded-proto`,
+ *      set by Vercel/proxies) — correct domain *and* port, and immune to a
+ *      misconfigured localhost env var.
+ *   3. The configured value / browser origin as a last resort.
+ */
 export function getSiteUrl(): string {
-  const url =
+  const configured = (
     process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.AUTH_URL ||
-    (typeof window !== "undefined" ? window.location.origin : "")
-  
-  return url.replace(/\/$/, "")
+    ""
+  ).replace(/\/$/, "")
+
+  // 1. A real public configuration always wins.
+  if (configured && !isLocalhostUrl(configured)) return configured
+
+  // 2. Otherwise derive from the actual request.
+  try {
+    const h = headers()
+    const host = h.get("x-forwarded-host") ?? h.get("host")
+    if (host) {
+      const proto =
+        h.get("x-forwarded-proto") ??
+        (isLocalhostUrl(`http://${host}`) ? "http" : "https")
+      return `${proto}://${host}`.replace(/\/$/, "")
+    }
+  } catch {
+    // headers() is unavailable outside a request scope (e.g. background job).
+  }
+
+  // 3. Last resorts.
+  if (configured) return configured
+  if (typeof window !== "undefined") return window.location.origin
+  return ""
 }
 
 /** Only the hash is persisted — the raw token lives solely in the email link. */
@@ -348,7 +392,7 @@ export async function respondToDonationApproval(
         decision: action === "approve" ? "APPROVED" : "REJECTED",
         reason: action === "reject" ? "Rejected by the NGO manager" : null,
         ngoName: process.env.NGO_DISPLAY_NAME ?? "Mangaldham Bahuuddeshiy Samajik Sanstha",
-        trackUrl: `${getSiteUrl()}/track`,
+        trackUrl: `${getSiteUrl()}/track?id=${encodeURIComponent(donationCode)}`,
       })
       donorNotified = true
     } catch (err) {

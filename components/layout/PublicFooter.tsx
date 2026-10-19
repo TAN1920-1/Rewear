@@ -2,6 +2,10 @@ import Link from "next/link"
 import { Heart, MapPin, Phone, Mail } from "lucide-react"
 import { NGO_CONTACT } from "@/lib/constants/ngo-contact"
 
+/** Keeps every footer link at a ≥44px tall hit area (WCAG 2.5.8 «Target Size»). */
+const FOOTER_LINK =
+  "inline-flex min-h-11 items-center rounded-md hover:text-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+
 export function PublicFooter() {
   return (
     <footer className="border-t border-slate-200/70 bg-white/60 backdrop-blur">
@@ -21,23 +25,23 @@ export function PublicFooter() {
           </div>
 
           <div className="text-sm text-slate-600">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
               Contact
             </p>
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               <li className="flex items-start gap-2">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                <MapPin className="mt-3.5 h-4 w-4 shrink-0 text-emerald-600" />
                 <span>{NGO_CONTACT.address}</span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 shrink-0 text-emerald-600" />
-                <a href={`tel:${NGO_CONTACT.phone}`} className="hover:text-emerald-600">
+                <a href={`tel:${NGO_CONTACT.phone}`} className={FOOTER_LINK}>
                   {NGO_CONTACT.phoneDisplay}
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 shrink-0 text-emerald-600" />
-                <a href={`mailto:${NGO_CONTACT.email}`} className="break-all hover:text-emerald-600">
+                <a href={`mailto:${NGO_CONTACT.email}`} className={`${FOOTER_LINK} break-all`}>
                   {NGO_CONTACT.email}
                 </a>
               </li>
@@ -45,14 +49,14 @@ export function PublicFooter() {
           </div>
 
           <div className="text-sm text-slate-600">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
               Explore
             </p>
-            <ul className="space-y-2">
-              <li><Link href="/requirements" className="hover:text-emerald-600">Current Needs</Link></li>
-              <li><Link href="/campaigns" className="hover:text-emerald-600">Campaigns</Link></li>
-              <li><Link href="/impact" className="hover:text-emerald-600">Impact</Link></li>
-              <li><Link href="/track" className="hover:text-emerald-600">Track a Donation</Link></li>
+            <ul>
+              <li><Link href="/requirements" className={FOOTER_LINK}>Current Needs</Link></li>
+              <li><Link href="/campaigns" className={FOOTER_LINK}>Campaigns</Link></li>
+              <li><Link href="/impact" className={FOOTER_LINK}>Impact</Link></li>
+              <li><Link href="/track" className={FOOTER_LINK}>Track a Donation</Link></li>
             </ul>
           </div>
         </div>

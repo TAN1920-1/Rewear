@@ -15,7 +15,7 @@ export function NgoContactSection() {
           Contact Us
         </Badge>
         <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-          Visit or reach out to us
+          Visit or reach out to our team today
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-slate-600">
           We&apos;d love to hear from you. Drop by our centre, give us a call, or send an email —
@@ -55,7 +55,7 @@ export function NgoContactSection() {
                   <p className="text-xs uppercase tracking-wider text-slate-500">Mobile</p>
                   <a
                     href={`tel:${NGO_CONTACT.phone}`}
-                    className="font-medium text-slate-900 transition-colors hover:text-emerald-600"
+                    className="inline-flex min-h-11 items-center rounded-md font-medium text-slate-900 transition-colors hover:text-emerald-600"
                   >
                     {NGO_CONTACT.phoneDisplay}
                   </a>
@@ -70,7 +70,7 @@ export function NgoContactSection() {
                   <p className="text-xs uppercase tracking-wider text-slate-500">Email</p>
                   <a
                     href={`mailto:${NGO_CONTACT.email}`}
-                    className="break-all font-medium text-slate-900 transition-colors hover:text-emerald-600"
+                    className="inline-flex min-h-11 items-center rounded-md break-all font-medium text-slate-900 transition-colors hover:text-emerald-600"
                   >
                     {NGO_CONTACT.email}
                   </a>
@@ -98,7 +98,7 @@ export function NgoContactSection() {
               href={NGO_CONTACT.mapLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-800"
+              className="inline-flex min-h-11 items-center gap-1 rounded-md text-xs font-medium text-emerald-700 hover:text-emerald-800"
             >
               View larger map
               <ExternalLink className="h-3 w-3" />

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useEffect } from "react"
+import { useState, useTransition, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { DonationStatus } from "@/lib/enums"
@@ -133,16 +133,37 @@ function StatusTimeline({ donation }: { donation: PublicDonationTracking }) {
 }
 
 export default function TrackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-b from-emerald-50 via-white to-teal-50">
+          <PublicNavbar />
+          <main className="mx-auto flex max-w-4xl flex-col items-center justify-center gap-4 px-4 py-24 sm:px-6 lg:px-8">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+            <p className="text-sm text-slate-500">Loading donation tracker…</p>
+          </main>
+          <PublicFooter />
+        </div>
+      }
+    >
+      <TrackPageContent />
+    </Suspense>
+  )
+}
+
+function TrackPageContent() {
   const { toast } = useToast()
   const searchParams = useSearchParams()
-  const [trackingId, setTrackingId] = useState(searchParams.get("id") ?? "")
+  const [trackingId, setTrackingId] = useState(
+    searchParams.get("id") ?? searchParams.get("don") ?? ""
+  )
   const [donation, setDonation] = useState<PublicDonationTracking | null>(null)
   const [searched, setSearched] = useState(false)
   const [isPending, startTransition] = useTransition()
 
-  // Auto-search when an ?id= param is present in the URL
+  // Auto-search when an ?id= (email/admin) or ?don= (QR code) param is present
   useEffect(() => {
-    const idParam = searchParams.get("id")
+    const idParam = searchParams.get("id") ?? searchParams.get("don")
     if (idParam) {
       startTransition(async () => {
         const result = await fetchDonationByTrackingId(idParam)
@@ -191,182 +212,186 @@ export default function TrackPage() {
 
       <PublicNavbar />
 
-      {/* Hero */}
-      <section className="relative mx-auto max-w-4xl px-4 pb-10 pt-16 sm:px-6 lg:px-8 lg:pt-20">
-        <div className="text-center">
-          <Badge variant="secondary" className="mb-6 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700 shadow-sm">
-            <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-            End-to-end donation transparency
-          </Badge>
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-            Track a{" "}
-            <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
-              Donation
-            </span>
-            .
-          </h1>
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
-            Enter your donation tracking ID to see the live status timeline —
-            from drop-off to the hands of the person who needed it.
-          </p>
-        </div>
-      </section>
+      <main>
 
-      {/* Search */}
-      <section className="mx-auto max-w-2xl px-4 pb-8 sm:px-6 lg:px-8">
-        <Card className="glass border-white/60">
-          <CardContent className="p-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="trackingId" className="text-sm font-medium text-slate-700">
-                  Donation Tracking ID
-                </Label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Input
-                    id="trackingId"
-                    type="text"
-                    placeholder="e.g. DON-2026-7F3K9Q2M"
-                    value={trackingId}
-                    onChange={(e) => setTrackingId(e.target.value)}
-                    className="flex-1 h-11"
-                    autoCapitalize="characters"
-                  />
-                  <Button
-                    type="submit"
-                    size="lg"
-                    disabled={isPending}
-                    className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25"
-                  >
-                    <Search className="mr-2 h-4 w-4" />
-                    {isPending ? "Searching…" : "Track"}
-                  </Button>
-                </div>
-                <p className="text-xs text-slate-500">
-                  You can find this ID in your confirmation email or donation receipt.
-                </p>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </section>
-
-      {/* Result */}
-      <section className="mx-auto max-w-3xl px-4 pb-24 sm:px-6 lg:px-8">
-        {isPending && (
-          <Card className="glass border-white/60 p-10">
-            <div className="text-center text-slate-500 text-sm">Looking up your donation…</div>
-          </Card>
-        )}
-
-        {!isPending && searched && !donation && (
-          <Card className="glass border-white/60 p-10 text-center">
-            <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 text-amber-600">
-              <Search className="h-7 w-7" />
-            </div>
-            <h3 className="text-xl font-semibold text-slate-900">No donation found</h3>
-            <p className="mt-2 text-slate-600">
-              Double-check the tracking ID format. It should look like <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">DON-2026-7F3K9Q2M</code>.
+        {/* Hero */}
+        <section className="relative mx-auto max-w-4xl px-4 pb-10 pt-16 sm:px-6 lg:px-8 lg:pt-20">
+          <div className="text-center">
+            <Badge variant="secondary" className="mb-6 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700 shadow-sm">
+              <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+              End-to-end donation transparency
+            </Badge>
+            <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+              Track a{" "}
+              <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
+                Donation
+              </span>
+              .
+            </h1>
+            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
+              Enter your donation tracking ID to see the live status timeline —
+              from drop-off to the hands of the person who needed it.
             </p>
+          </div>
+        </section>
+
+        {/* Search */}
+        <section className="mx-auto max-w-2xl px-4 pb-8 sm:px-6 lg:px-8">
+          <Card className="glass border-white/60">
+            <CardContent className="p-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="trackingId" className="text-sm font-medium text-slate-700">
+                    Donation Tracking ID
+                  </Label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      id="trackingId"
+                      type="text"
+                      placeholder="e.g. DON-2026-7F3K9Q2M"
+                      value={trackingId}
+                      onChange={(e) => setTrackingId(e.target.value)}
+                      className="flex-1 h-11"
+                      autoCapitalize="characters"
+                    />
+                    <Button
+                      type="submit"
+                      size="lg"
+                      disabled={isPending}
+                      className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25"
+                    >
+                      <Search className="mr-2 h-4 w-4" />
+                      {isPending ? "Searching…" : "Track"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    You can find this ID in your confirmation email or donation receipt.
+                  </p>
+                </div>
+              </form>
+            </CardContent>
           </Card>
-        )}
+        </section>
 
-        {!isPending && donation && (
-          <div className="space-y-6">
-            {/* Summary card */}
-            <Card className="glass border-white/60 overflow-hidden">
-              <CardHeader className="pb-4 border-b border-slate-100">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <CardTitle className="flex items-center gap-2 text-xl text-slate-900">
-                      <Package className="h-5 w-5 text-emerald-600" />
-                      Donation Status
-                    </CardTitle>
-                    <CardDescription className="mt-1 flex items-center gap-1.5 text-sm">
-                      <Hash className="h-3.5 w-3.5" />
-                      {donation.donationId}
-                    </CardDescription>
-                  </div>
-                  <Badge className={`border text-sm ${getStatusBadgeClass(donation.currentStatus)}`}>
-                    {donation.currentStatus.replace(/_/g, " ")}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6 grid gap-6 sm:grid-cols-2">
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
-                      <User className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-slate-500">Donor</p>
-                      <p className="font-medium text-slate-900">{donation.donorDisplayName}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-cyan-50 text-cyan-600">
-                      <Package className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-slate-500">Total Items</p>
-                      <p className="font-medium text-slate-900">
-                        {donation.totalItems.toLocaleString()} item{donation.totalItems === 1 ? "" : "s"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-600">
-                      <Clock className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wider text-slate-500">Submitted</p>
-                      <p className="font-medium text-slate-900">{formatDateTime(donation.createdAt)}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
+        {/* Result */}
+        <section className="mx-auto max-w-3xl px-4 pb-24 sm:px-6 lg:px-8">
+          {isPending && (
+            <Card className="glass border-white/60 p-10">
+              <div className="text-center text-slate-500 text-sm">Looking up your donation…</div>
             </Card>
+          )}
 
-            {/* Timeline card */}
-            <Card className="glass border-white/60">
-              <CardHeader className="pb-4 border-b border-slate-100">
-                <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                  Status Timeline
-                </CardTitle>
-                <CardDescription className="text-sm">
-                  Every step is recorded with timestamps and the responsible staff member.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <StatusTimeline donation={donation} />
-              </CardContent>
+          {!isPending && searched && !donation && (
+            <Card className="glass border-white/60 p-10 text-center">
+              <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 text-amber-600">
+                <Search className="h-7 w-7" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900">No donation found</h3>
+              <p className="mt-2 text-slate-600">
+                Double-check the tracking ID format. It should look like <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">DON-2026-7F3K9Q2M</code>.
+              </p>
             </Card>
+          )}
 
-            <div className="flex flex-wrap justify-center gap-3">
-              <Button asChild variant="outline" className="bg-white/80 backdrop-blur">
-                <Link href="/">
-                  Back to home
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25">
-                <Link href="/donor/donations/new">
-                  Donate again
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
+          {!isPending && donation && (
+            <div className="space-y-6">
+              {/* Summary card */}
+              <Card className="glass border-white/60 overflow-hidden">
+                <CardHeader className="pb-4 border-b border-slate-100">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-xl text-slate-900">
+                        <Package className="h-5 w-5 text-emerald-600" />
+                        Donation Status
+                      </CardTitle>
+                      <CardDescription className="mt-1 flex items-center gap-1.5 text-sm">
+                        <Hash className="h-3.5 w-3.5" />
+                        {donation.donationId}
+                      </CardDescription>
+                    </div>
+                    <Badge className={`border text-sm ${getStatusBadgeClass(donation.currentStatus)}`}>
+                      {donation.currentStatus.replace(/_/g, " ")}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-6 grid gap-6 sm:grid-cols-2">
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
+                        <User className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-slate-500">Donor</p>
+                        <p className="font-medium text-slate-900">{donation.donorDisplayName}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-cyan-50 text-cyan-600">
+                        <Package className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-slate-500">Total Items</p>
+                        <p className="font-medium text-slate-900">
+                          {donation.totalItems.toLocaleString()} item{donation.totalItems === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-50 text-amber-600">
+                        <Clock className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-slate-500">Submitted</p>
+                        <p className="font-medium text-slate-900">{formatDateTime(donation.createdAt)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Timeline card */}
+              <Card className="glass border-white/60">
+                <CardHeader className="pb-4 border-b border-slate-100">
+                  <CardTitle className="flex items-center gap-2 text-lg text-slate-900">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                    Status Timeline
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Every step is recorded with timestamps and the responsible staff member.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <StatusTimeline donation={donation} />
+                </CardContent>
+              </Card>
+
+              <div className="flex flex-wrap justify-center gap-3">
+                <Button asChild variant="outline" className="bg-white/80 backdrop-blur">
+                  <Link href="/">
+                    Back to home
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button asChild className="bg-gradient-to-br from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25">
+                  <Link href="/donor/donations/new">
+                    Donate again
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {!isPending && !searched && (
-          <div className="text-center text-sm text-slate-400 py-8">
-            Enter a tracking ID above to view donation details.
-          </div>
-        )}
-      </section>
+          {!isPending && !searched && (
+            <div className="text-center text-sm text-slate-400 py-8">
+              Enter a tracking ID above to view donation details.
+            </div>
+          )}
+        </section>
+
+      </main>
 
       <PublicFooter />
     </div>

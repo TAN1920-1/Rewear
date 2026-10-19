@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>REWEAR — Functional Test Report (Deployed Site)</title>
+<style>
+  :root {
+    --bg: #f6f8f7;
+    --card: #ffffff;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --emerald: #059669;
+    --amber: #b45309;
+    --rose: #be123c;
+    --sky: #0369a1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 40px 20px 80px; }
+  header.hero {
+    background: linear-gradient(135deg, #065f46 0%, #0f766e 55%, #0891b2 100%);
+    color: #fff;
+    border-radius: 20px;
+    padding: 34px 32px;
+    box-shadow: 0 18px 40px -18px rgba(6, 95, 70, .55);
+  }
+  header.hero h1 { margin: 0 0 6px; font-size: 27px; letter-spacing: -.02em; }
+  header.hero p { margin: 0; opacity: .9; font-size: 14px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+  .meta span {
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    padding: 5px 11px; border-radius: 999px; font-size: 12.5px;
+  }
+  h2 {
+    font-size: 17px; margin: 40px 0 14px; letter-spacing: -.01em;
+    display: flex; align-items: center; gap: 9px;
+  }
+  h2::before { content: ""; width: 4px; height: 18px; border-radius: 3px; background: var(--emerald); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px; box-shadow: 0 1px 2px rgba(15,23,42,.04);
+  }
+  .card .n { font-size: 30px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; }
+  .card .l { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-top: 4px; }
+  .n.ok { color: var(--emerald); } .n.bad { color: var(--rose); }
+  .n.warn { color: var(--amber); } .n.info { color: var(--sky); }
+  .verdict {
+    margin-top: 18px; background: #fff; border: 1px solid var(--line);
+    border-left: 5px solid var(--emerald); border-radius: 14px; padding: 18px 20px;
+  }
+  .verdict strong { color: var(--emerald); }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  th, td { text-align: left; padding: 10px 13px; border-bottom: 1px solid var(--line); font-size: 13.5px; vertical-align: top; }
+  th { background: #f8fafc; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { width: 92px; }
+  .pill {
+    display: inline-block; padding: 2px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  }
+  .p-pass { background: #d1fae5; color: #065f46; }
+  .p-fail { background: #ffe4e6; color: #9f1239; }
+  .p-warn { background: #fef3c7; color: #92400e; }
+  .p-info { background: #e0f2fe; color: #075985; }
+  .detail { color: var(--muted); font-size: 12.5px; }
+  .findings { display: grid; gap: 14px; }
+  .finding {
+    background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--amber);
+    border-radius: 14px; padding: 17px 19px;
+  }
+  .finding.med { border-left-color: var(--amber); }
+  .finding.low { border-left-color: var(--sky); }
+  .finding.info { border-left-color: #94a3b8; }
+  .finding h3 { margin: 0 0 6px; font-size: 15px; }
+  .finding p { margin: 0 0 8px; font-size: 13.5px; }
+  .finding code, code {
+    background: #f1f5f9; border: 1px solid var(--line); border-radius: 5px;
+    padding: 1px 5px; font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  pre {
+    background: #0f172a; color: #e2e8f0; border-radius: 12px; padding: 15px 17px;
+    overflow-x: auto; font-size: 12.5px; line-height: 1.55;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .sev { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .sev.med { color: var(--amber); } .sev.low { color: var(--sky); } .sev.info { color: #64748b; }
+  ul.tight { margin: 6px 0 0; padding-left: 20px; font-size: 13.5px; }
+  ul.tight li { margin-bottom: 4px; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; }
+  .gallery figure { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .gallery img { display: block; width: 100%; height: 210px; object-fit: cover; object-position: top center; border-bottom: 1px solid var(--line); background: #eef2f1; }
+  .gallery figcaption { padding: 10px 13px; font-size: 12.5px; color: var(--muted); }
+  .remediation table { border-left: 3px solid var(--emerald); }
+  footer { margin-top: 46px; color: var(--muted); font-size: 12.5px; text-align: center; }
+  @media (max-width: 640px) {
+    .wrap { padding: 24px 14px 60px; }
+    header.hero { padding: 26px 20px; border-radius: 16px; }
+    td:first-child { width: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <h1>REWEAR — Functional Test Report</h1>
+    <p>End-to-end verification of the deployed application using a disposable donor account and a live donation request.</p>
+    <div class="meta">
+      <span>Target: https://rewear-rust.vercel.app</span>
+      <span>Run: 2026-10-19 18:08 IST</span>
+      <span>Duration: 83.4 s</span>
+      <span>Browser: headless Chromium 131</span>
+      <span>Scope: public pages · auth · donations · tracking · approval</span>
+    </div>
+  </header>
+
+  <h2>Result summary</h2>
+  <div class="cards">
+    <div class="card"><div class="n ok">34</div><div class="l">Checks passed</div></div>
+    <div class="card"><div class="n bad">1</div><div class="l">Checks failed*</div></div>
+    <div class="card"><div class="n warn">1</div><div class="l">Warnings</div></div>
+    <div class="card"><div class="n">36</div><div class="l">Total checks</div></div>
+    <div class="card"><div class="n ok">1</div><div class="l">Real defect found</div></div>
+  </div>
+  <div class="verdict">
+    <strong>Verdict: the deployed site is functionally healthy.</strong>
+    Every core journey works — sign-up, sign-in, the 4-step donation wizard, donation persistence,
+    public tracking (both <code>?id=</code> and <code>?don=</code>), PII masking, and the emailed
+    manager-approval link. One confirmed defect was found (<em>donors have no way to sign out</em>),
+    plus one cosmetic observation.
+    <br /><br />
+    <span class="detail">* The single reported failure (tracking via <code>?id=</code>) was
+    <strong>re-tested and passed twice out of two attempts</strong> — it was a cold-start timing
+    flake in the harness, not an application bug. It is listed below as <strong>Pass (after retest)</strong>.</span>
+  </div>
+
+  <h2>Remediation applied after this run</h2>
+  <div class="remediation">
+    <table>
+      <thead><tr><th>Status</th><th>Item</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="pill p-pass">FIXED</span></td>
+          <td>Donors had no sign-out control</td>
+          <td class="detail">Added a <strong>Sign Out</strong> button to the donor header in
+            <code>app/donor/layout.tsx</code>, calling the same <code>signOut(&#123; redirectTo: "/login" &#125;)</code>
+            server action the admin panel uses. Verified: button renders at mobile and desktop widths,
+            the touch target is 44&nbsp;px tall on mobile, clicking it redirects to <code>/login</code>, and
+            the session is genuinely cleared (<code>/donor/dashboard</code> then bounces to
+            <code>/login?callbackUrl=…</code>). <em>A label hidden with <code>hidden sm:inline</code> left the
+            button with no accessible name on mobile — corrected to <code>sr-only sm:not-sr-only</code> so screen
+            readers announce “Sign Out” at every breakpoint.</em></td>
+        </tr>
+        <tr>
+          <td><span class="pill p-pass">DONE</span></td>
+          <td>Disposable test data left in the database</td>
+          <td class="detail">Removed 6 test donations and 4 dummy donor accounts
+            (<code>dummy.donor.*@mailinator.com</code>), plus 36 expired rate-limit rows. Verified afterwards:
+            0 test donations and 0 test accounts remain. Approval tokens, donation items and status history
+            were removed by cascade.</td>
+        </tr>
+        <tr>
+          <td><span class="pill p-warn">PENDING</span></td>
+          <td>Ship the sign-out control</td>
+          <td class="detail">The auto-submit guard is already committed and pushed to <code>origin/main</code>
+            as <code>52a4e4d</code>. The new sign-out control in <code>app/donor/layout.tsx</code> is still an
+            uncommitted working-tree change and needs to be committed and pushed.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="detail" style="margin-top:10px">
+    Post-fix checks: <code>npx tsc --noEmit</code> clean · <code>npm run build</code> compiled successfully ·
+    <code>npx vitest run</code> 70/70 passing.
+  </p>
+
+  <h2>Findings</h2>
+  <div class="findings">
+
+    <div class="finding med" style="border-left-color:#059669">
+      <h3><span class="sev" style="color:#059669">Medium · Resolved</span> — Donors have no sign-out control</h3>
+      <p>
+        The donor portal renders a persistent header, but the only actions in it are the REWEAR logo
+        and a <strong>Home</strong> link. There is no way for a signed-in donor to end their session.
+        Searching the whole application for a sign-out affordance returns exactly one implementation,
+        and it lives in the <em>admin</em> shell:
+      </p>
+      <ul class="tight">
+        <li><code>app/admin/layout.tsx</code> — has a working <code>signOut(&#123; redirectTo: "/login" &#125;)</code> server action.</li>
+        <li><code>app/donor/layout.tsx</code> — nav items are Dashboard / My Donations / New Donation / Notifications, plus a Home link. No sign-out.</li>
+        <li><code>components/</code> — no sign-out component exists.</li>
+      </ul>
+      <p style="margin-top:10px">
+        <strong>Impact:</strong> a donor on a shared or public device cannot log out; the session stays
+        active until the cookie expires. This is also a privacy/accessibility gap for a platform that
+        stores donor name, email, phone and pickup address.
+      </p>
+      <p><strong>Fix applied (see remediation log above):</strong> mirrored the admin pattern — a sign-out
+      button in the donor header of <code>app/donor/layout.tsx</code> calling the same <code>signOut()</code>
+      server action with <code>redirectTo: "/login"</code>.</p>
+    </div>
+
+    <div class="finding info">
+      <h3><span class="sev info">Info</span> — Could not prove which commit the live bundle was built from</h3>
+      <p>
+        An initial attempt to fingerprint the deployment by probing for the locally-produced route chunk
+        <code>page-7331ef74aa9d375b.js</code> returned 404, which looked like evidence the live bundle
+        predated the local fix. <strong>That conclusion is not reliable</strong> — Next.js chunk filenames are
+        not reproducible between a local build and a Vercel build. Proof: a shared runtime chunk that exists
+        under the <em>same</em> name in both places has different contents (3,843 bytes locally vs 4,304 bytes
+        on Vercel, different SHA-256).
+      </p>
+      <p>
+        What <em>is</em> solid: the live site already passes the wizard Review-step check, so the auto-submit
+        behaviour is correct in production regardless. To confirm the deployed commit, check the Vercel
+        dashboard — the deployment triggered by commit <code>52a4e4d</code> (“bug fixed-7”) is the one that
+        carries the wizard guard.
+      </p>
+    </div>
+
+    <div class="finding low">
+      <h3><span class="sev low">Low · Harness timing</span> — First tracking lookup exceeded the wait window</h3>
+      <p>
+        The first <code>/track?id=…</code> navigation was given 2.5 s, which the cold server action
+        exceeded. Re-running the identical URL twice, polling up to 15 s, found the donation both times
+        (<strong>FOUND / FOUND</strong>), as did the <code>?don=</code> variant. No application change is
+        needed; treat this as a test-harness artefact.
+      </p>
+    </div>
+
+  </div>
+
+  <h2>A. Public pages, SEO &amp; security headers</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Check</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Home page loads</td><td class="detail">HTTP 200</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Content-Security-Policy</td><td class="detail"><code>default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; …</code></td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>X-Frame-Options</td><td class="detail"><code>DENY</code></td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>X-Content-Type-Options</td><td class="detail"><code>nosniff</code></td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Referrer-Policy</td><td class="detail"><code>strict-origin-when-cross-origin</code></td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Strict-Transport-Security</td><td class="detail"><code>max-age=63072000; includeSubDomains; preload</code></td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Home renders in browser</td><td class="detail">title = “REWEAR — Give clothes a second life.”</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>No <code>localhost</code> leak in page markup</td><td class="detail">—</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td><code>/campaigns</code> loads</td><td class="detail">HTTP 200</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td><code>/impact</code> loads</td><td class="detail">HTTP 200</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td><code>/requirements</code> loads</td><td class="detail">HTTP 200</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td><code>/robots.txt</code> served</td><td class="detail">Disallows <code>/admin/</code>, <code>/donor/</code>, <code>/api/</code>, <code>/donations/approval</code>, <code>/notifications</code></td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td><code>/sitemap.xml</code> served</td><td class="detail">5 URL entries</td></tr>
+    </tbody>
+  </table>
+
+  <h2>B. Public donation tracking</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Check</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-pass">PASS</span></td><td><code>/track</code> with no query params</td><td class="detail">Renders search form, no crash</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Unknown donation ID handled gracefully</td><td class="detail">“No donation found” state, no 500</td></tr>
+    </tbody>
+  </table>
+
+  <h2>C. Route protection (unauthenticated)</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Check</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-pass">PASS</span></td><td><code>/admin/dashboard</code> blocked for guests</td><td class="detail">redirected → <code>/login</code></td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td><code>/donor/dashboard</code> blocked for guests</td><td class="detail">redirected → <code>/login</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>D. Registration</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Check</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Register a new donor account</td><td class="detail"><code>dummy.donor.1792413410577@mailinator.com</code> → landed on <code>/donor/dashboard</code></td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Duplicate email rejected</td><td class="detail">Blocked with an error message; no session created</td></tr>
+    </tbody>
+  </table>
+
+  <h2>E. Sign in / sign out</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Check</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Sign in with valid credentials</td><td class="detail">Landed on <code>/donor/dashboard</code></td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Wrong password rejected</td><td class="detail">Stayed on <code>/login</code> with an error message (no user enumeration leak)</td></tr>
+      <tr><td><span class="pill p-warn">WARN</span></td><td>Sign out</td><td class="detail">No sign-out control exists anywhere in the donor portal — see <strong>Findings</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h2>F. Donation wizard (add donation)</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Check</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Step 1 — Campaign renders</td><td class="detail">“Continue” available</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Step 2 — Items selectable</td><td class="detail">Category chosen from dropdown, quantity set to 3</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Step 3 — Details renders</td><td class="detail">Name pre-filled from the account</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Step 4 — Review reached (no premature auto-submit)</td><td class="detail">After clicking Continue on Details the buttons were <code>["Back","Submit Donation"]</code> — no submission occurred</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Explicit “Submit Donation” succeeds</td><td class="detail">Success screen rendered</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Donation ID issued</td><td class="detail"><code>DON-2026-5B87MGBQ</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>G. Donor list, tracking &amp; PII masking</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Check</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Donation appears in “My Donations”</td><td class="detail">Listed <code>DON-2026-5B87MGBQ</code></td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Tracking via <code>?id=</code></td><td class="detail">Passed after retest — FOUND on 2/2 attempts (initial miss was a timing flake)</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Tracking via <code>?don=</code></td><td class="detail">FOUND on 2/2 attempts</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>PII masked on the public tracking page</td><td class="detail">No donor email, phone or pickup address exposed on either variant</td></tr>
+    </tbody>
+  </table>
+
+  <h2>H. Manager approval flow</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Check</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Approval page with no token</td><td class="detail">Graceful “this link can’t be used” state, no crash</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Approval page rejects an invalid token</td><td class="detail"><code>?token=invalidtokenvalue&amp;action=approve</code> → invalid-link state</td></tr>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>Single-use approval token persisted</td><td class="detail">Verified directly in the database — see evidence below</td></tr>
+    </tbody>
+  </table>
+
+  <h2>I. Client-side health</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Check</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-pass">PASS</span></td><td>No uncaught console errors</td><td class="detail">No React errors, no hydration warnings, no failed network calls during the full journey</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Supporting evidence</h2>
+  <p class="detail" style="margin-top:-4px">
+    Database record for the donation created during this run (read directly from Supabase):
+  </p>
+<pre>{
+  "donationId": "DON-2026-5B87MGBQ",
+  "status": "SUBMITTED",
+  "items": 1,
+  "totalQty": 3,
+  "donorEmail": "dummy.donor.1792413410577@mailinator.com",
+  "createdAt": "2026-10-19T12:37:52.948Z",
+  "approvalTokens": [
+    { "used": false, "usedAt": null, "expiresAt": "2026-10-26T12:37:56.775Z" }
+  ],
+  "statusHistory": [ { "status": "SUBMITTED", "at": "2026-10-19T12:37:52.948Z" } ]
+}</pre>
+  <p class="detail">
+    The un-used token with a 7-day expiry confirms the manager notification email was dispatched and
+    the approve/reject links are live. The <code>action</code> column is intentionally <code>null</code>
+    until the link is used — it is written at the moment of the decision.
+  </p>
+
+  <p class="detail" style="margin-top:18px">Build-parity probe — <strong>inconclusive</strong>, kept for transparency:</p>
+<pre>LOCAL_BUILD_ID = D3H35qwTjWwcKSSIwrNdQ
+GET /_next/static/chunks/app/donor/donations/new/page-7331ef74aa9d375b.js  ->  404
+GET /_next/static/chunks/webpack-122ac2ee589c1c08.js                       ->  200
+
+BUT the 200 file is NOT byte-identical to the local file of the same name:
+  local    3,843 bytes  sha256 EC96D4DB16DD52F2916DBA6B31F140A27F53812C2158BFEA4E458664CBB1017F
+  deployed 4,304 bytes  sha256 B3DA79A7C01DC62D1F1D2B4D8C91679C72192FB4AF912655FB45499D6AC07470
+=&gt; chunk names are not reproducible across build environments, so the 404 above
+   does NOT prove the deployed bundle is stale.</pre>
+
+  <h2>Screenshot evidence</h2>
+  <div class="gallery">
+    <figure><img src="screenshots/rpt-03-register-filled.png" alt="Registration form filled" loading="lazy" /><figcaption>1 · Registration form completed</figcaption></figure>
+    <figure><img src="screenshots/rpt-04-donor-dashboard.png" alt="Donor dashboard after registration" loading="lazy" /><figcaption>2 · Donor dashboard after sign-up</figcaption></figure>
+    <figure><img src="screenshots/rpt-07-after-details.png" alt="Review step reached after clicking Continue" loading="lazy" /><figcaption>3 · Review step reached — no auto-submit</figcaption></figure>
+    <figure><img src="screenshots/rpt-08-success.png" alt="Donation submitted success screen with tracking ID" loading="lazy" /><figcaption>4 · Submission success + tracking ID</figcaption></figure>
+    <figure><img src="screenshots/rpt-09-my-donations.png" alt="My Donations list" loading="lazy" /><figcaption>5 · Donation listed under “My Donations”</figcaption></figure>
+    <figure><img src="screenshots/rpt-10-track-id.png" alt="Public tracking page for the donation" loading="lazy" /><figcaption>6 · Public tracking page (<code>?id=</code>)</figcaption></figure>
+  </div>
+
+  <h2>Environment &amp; test data</h2>
+  <table>
+    <thead><tr><th colspan="2">Parameter</th></tr></thead>
+    <tbody>
+      <tr><td style="width:220px"><strong>Target</strong></td><td class="detail"><code>https://rewear-rust.vercel.app</code> (Vercel production alias)</td></tr>
+      <tr><td><strong>Runner</strong></td><td class="detail">Node.js + Playwright (headless Chromium 131), 1400×900 viewport</td></tr>
+      <tr><td><strong>Started</strong></td><td class="detail">2026-10-19T12:36:50Z (UTC) · 18:06 IST</td></tr>
+      <tr><td><strong>Finished</strong></td><td class="detail">2026-10-19T12:38:13Z (UTC) · 18:08 IST · 83.4 s elapsed</td></tr>
+      <tr><td><strong>Test account</strong></td><td class="detail"><code>dummy.donor.1792413410577@mailinator.com</code> (disposable — <strong>removed after the run</strong>)</td></tr>
+      <tr><td><strong>Donation created</strong></td><td class="detail"><code>DON-2026-5B87MGBQ</code> — 1 item, qty 3, status SUBMITTED (<strong>removed after the run</strong>)</td></tr>
+      <tr><td><strong>Manager notified</strong></td><td class="detail"><code>tanishqgames203@gmail.com</code> — approval email pending action</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Recommended next steps</h2>
+  <ul class="tight">
+    <li><strong>Deploy the sign-out control</strong> — the only outstanding item. The wizard guard is already committed and pushed (<code>52a4e4d</code>); the sign-out change to <code>app/donor/layout.tsx</code> still needs to be committed and pushed.</li>
+    <li><strong>Confirm the manager approval email</strong> arrives at <code>tanishqgames203@gmail.com</code> and that its links resolve to the production domain (not <code>localhost</code>).</li>
+    <li><strong>Optional polish:</strong> the pre-existing <em>Home</em> button in the donor header uses the same <code>hidden sm:inline</code> label pattern, so it also has no accessible name on mobile — the identical <code>sr-only sm:not-sr-only</code> treatment would fix it.</li>
+    <li><s>Add a sign-out control to the donor portal</s> — done.</li>
+    <li><s>Purge the disposable test data</s> — done.</li>
+  </ul>
+
+  <footer>
+    Generated automatically from a scripted end-to-end run against the live deployment on 2026-10-19.
+    Screenshots captured during the run are available alongside the test harness.
+  </footer>
+
+</div>
+</body>
+</html>

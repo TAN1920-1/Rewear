@@ -118,6 +118,9 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
+                <div className="mt-2 text-right">
+                  <Link href="/reset-password" className="text-sm text-emerald-600 hover:underline">Forgot password?</Link>
+                </div>
 
               <Button
                 type="submit"

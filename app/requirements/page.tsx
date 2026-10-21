@@ -31,6 +31,11 @@ export const metadata = {
   alternates: { canonical: "/requirements" },
 }
 
+// Rendered per-request: this page reads the database, and prerendering it at
+// build time makes the whole build fail whenever the database is unreachable
+// (e.g. a cold serverless Postgres instance).
+export const dynamic = "force-dynamic"
+
 export default async function RequirementsPage() {
   const requirements = await prisma.requirement.findMany({
     where: { active: true },

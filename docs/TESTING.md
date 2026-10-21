@@ -6,7 +6,7 @@ workflow. It is split into three layers:
 | Layer | What it is | Where it runs | Safe against production? |
 |---|---|---|---|
 | **A. Automated regression tests** | Vitest unit/integration tests with every external dependency mocked | Your machine / CI | ✅ Yes — no network, no database, no email |
-| **B. Local end-to-end (E2E)** | Manual walkthrough of the real app against a **separate test database** | Local or a staging deploy | ⚠️ Only against a test database — **never** the production Supabase project |
+| **B. Local end-to-end (E2E)** | Manual walkthrough of the real app against a **separate test database** | Local or a staging deploy | ⚠️ Only against a test database — **never** the production database |
 | **C. Manual production checks** | Read-only verification on the live deployment | `https://rewear-rust.vercel.app` | ✅ Read-only only |
 
 > **Never point `DATABASE_URL` at production while running layer B.** Do not reseed,
@@ -44,8 +44,8 @@ what matters.
 |---|---|---|
 | [`tests/seed-guard.test.ts`](../tests/seed-guard.test.ts) | Demo seeding | refuses production even with the flag set; refuses without opt-in; allows only non-prod + flag; generated password is random and never the old shared value |
 | [`tests/donation-id.test.ts`](../tests/donation-id.test.ts) | Tracking IDs | `DON-YYYY-XXXXXXXX` format; no ambiguous `0/O/1/I/L`; 5 000 concurrent generations all unique; P2002 detection |
-| [`tests/auth-schema.test.ts`](../tests/auth-schema.test.ts) | Validation | valid registration; invalid email rejected; weak password rejected; password/confirm mismatch; injected `role` field is stripped |
-| [`tests/auth-actions.test.ts`](../tests/auth-actions.test.ts) | Auth actions | registration always assigns `DONOR`; injected `NGO_ADMIN` ignored; duplicate email; invalid credentials; rate-limit message |
+| [`tests/auth-schema.test.ts`](../tests/auth-schema.test.ts) | Validation | valid registration; invalid email rejected; weak password rejected; password/confirm mismatch; injected `role` field is stripped; change-password rules (short/identical/mismatch rejected) |
+| [`tests/auth-actions.test.ts`](../tests/auth-actions.test.ts) | Auth actions | registration always assigns `DONOR`; injected `NGO_ADMIN` ignored; duplicate email; invalid credentials; rate-limit message; change-password requires a session, re-checks the current password, updates the session user, is rate-limited, and ignores any client-supplied id |
 | [`tests/donation-actions.test.ts`](../tests/donation-actions.test.ts) | Donation creation | unauthenticated rejected; empty/invalid items rejected; `donorId` taken from the session; items + initial status history persisted; 50 concurrent submissions produce unique IDs; retry on collision; email failure still succeeds exactly once; DB errors not leaked |
 | [`tests/authorization.test.ts`](../tests/authorization.test.ts) | Admin authorization | unauthenticated/donor/staff-without-NGO blocked; admin scoped to own `ngoId`; unknown status rejected; safe error message |
 | [`tests/donation-ownership.test.ts`](../tests/donation-ownership.test.ts) | Ownership | owner allowed; cross-donor denied; anonymous denied |
@@ -64,7 +64,7 @@ npm run lint
 
 ## B. Local end-to-end walkthrough (13 steps)
 
-Run this against a **dedicated test database** (a second Supabase project, or a local
+Run this against a **dedicated test database** (a second Neon branch/project, or a local
 Postgres). Use a unique test email every time so runs never collide.
 
 ### 1. Start the app with test environment variables
@@ -228,7 +228,7 @@ These are the only checks that should ever touch the live site. **Read-only.**
    no access to `/admin/**`.
 
 Items **not verifiable from this environment**: anything requiring the production
-Supabase credentials, the production mail account, or an interactive browser session.
+database credentials, the production mail account, or an interactive browser session.
 Those must be executed by the project owner and are reported as *not verified* until
 observed.
 

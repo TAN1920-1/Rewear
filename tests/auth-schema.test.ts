@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { LoginSchema, RegisterSchema } from "@/lib/validations/auth.schema"
+import { ChangePasswordSchema, LoginSchema, RegisterSchema } from "@/lib/validations/auth.schema"
 
 const validRegistration = {
   name: "Test Donor",
@@ -44,6 +44,56 @@ describe("RegisterSchema", () => {
     expect(result.success).toBe(true)
     if (result.success) {
       expect("role" in result.data).toBe(false)
+    }
+  })
+})
+
+describe("ChangePasswordSchema", () => {
+  const validChange = {
+    currentPassword: "secret123",
+    newPassword: "newsecret456",
+    confirmPassword: "newsecret456",
+  }
+
+  it("accepts a valid change", () => {
+    expect(ChangePasswordSchema.safeParse(validChange).success).toBe(true)
+  })
+
+  it("rejects an empty current password", () => {
+    expect(ChangePasswordSchema.safeParse({ ...validChange, currentPassword: "" }).success).toBe(
+      false
+    )
+  })
+
+  it("rejects a too-short new password", () => {
+    const result = ChangePasswordSchema.safeParse({
+      currentPassword: "secret123",
+      newPassword: "123",
+      confirmPassword: "123",
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it("rejects a new / confirmation mismatch", () => {
+    const result = ChangePasswordSchema.safeParse({
+      ...validChange,
+      confirmPassword: "different-password",
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues.some((i) => i.path.includes("confirmPassword"))).toBe(true)
+    }
+  })
+
+  it("rejects a new password identical to the current one", () => {
+    const result = ChangePasswordSchema.safeParse({
+      currentPassword: "secret123",
+      newPassword: "secret123",
+      confirmPassword: "secret123",
+    })
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.issues.some((i) => i.path.includes("newPassword"))).toBe(true)
     }
   })
 })

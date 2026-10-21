@@ -14,6 +14,11 @@ export const metadata = {
   alternates: { canonical: "/impact" },
 }
 
+// Rendered per-request: this page reads the database, and prerendering it at
+// build time makes the whole build fail whenever the database is unreachable
+// (e.g. a cold serverless Postgres instance).
+export const dynamic = "force-dynamic"
+
 export default async function ImpactPage() {
   const stories = await prisma.impactStory.findMany({
     where: { published: true },

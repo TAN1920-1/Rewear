@@ -3,8 +3,8 @@
  *
  * OOP pillars:
  *  - Abstraction : callers depend only on `IStorageProvider`, never on
- *                  Supabase or the filesystem.
- *  - Polymorphism: `SupabaseStorageProvider` and `LocalStorageProvider` are
+ *                  Firebase or the filesystem.
+ *  - Polymorphism: `FirebaseStorageProvider` and `LocalStorageProvider` are
  *                  interchangeable at runtime (selected via `getStorageProvider`).
  */
 

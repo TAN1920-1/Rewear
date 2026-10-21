@@ -10,6 +10,11 @@ import { PublicNavbar } from "@/components/layout/PublicNavbar"
 import { PublicFooter } from "@/components/layout/PublicFooter"
 import { Calendar, Target, Sparkles, ArrowRight, HandHeart, Flag } from "lucide-react"
 
+// Rendered per-request: this page reads the database, and prerendering it at
+// build time makes the whole build fail whenever the database is unreachable
+// (e.g. a cold serverless Postgres instance).
+export const dynamic = "force-dynamic"
+
 function getStatusBadgeVariant(status: string) {
   switch (status) {
     case CampaignStatus.ACTIVE:

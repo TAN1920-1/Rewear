@@ -43,10 +43,10 @@ The NGO details are defined **once** in [`lib/constants/ngo-contact.ts`](lib/con
 | **Framework** | Next.js 14.2 (App Router, React Server Components, Server Actions) |
 | **Language** | TypeScript 5.6 (strict mode) |
 | **Styling** | Tailwind CSS 3.4 + shadcn/ui (Radix UI primitives) |
-| **Database** | PostgreSQL (Supabase) |
+| **Database** | PostgreSQL (Neon) |
 | **ORM** | Prisma 5.22 |
 | **Auth** | NextAuth v5 (beta) — Credentials provider, JWT sessions |
-| **File Storage** | Supabase Storage |
+| **File Storage** | Firebase Cloud Storage |
 | **Email** | Nodemailer over SMTP (Resend / Gmail / SendGrid — any relay) |
 | **Charts** | Recharts |
 | **PDF** | `@react-pdf/renderer` (donation receipts) |
@@ -60,7 +60,7 @@ The NGO details are defined **once** in [`lib/constants/ngo-contact.ts`](lib/con
 - **Business logic** is kept out of actions, in `lib/services/`.
 - **OOP core** (`lib/core/`) uses abstraction + interfaces with swappable providers:
   - `AppError` / `BaseService` — shared error and service base classes
-  - `IStorageProvider` — Supabase Storage implementation
+  - `IStorageProvider` — Firebase Cloud Storage implementation
   - `IEmailProvider` — `SmtpEmailProvider` and `LogEmailProvider`, chosen by a factory
 - **Auth is split**: `auth.config.ts` is Edge-safe (used by middleware); `auth.ts` adds the Prisma/bcrypt-dependent Credentials provider. This keeps Prisma out of the Edge bundle.
 - **Route protection** is enforced by NextAuth middleware on `/admin/**` and `/donor/**`, plus server-side role guards.
@@ -109,7 +109,7 @@ The NGO details are defined **once** in [`lib/constants/ngo-contact.ts`](lib/con
 ### Supporting features
 
 - **Donation receipts** — generated as PDFs via `/api/receipts/[donationId]`
-- **Image uploads** — `/api/upload` writes to Supabase Storage
+- **Image uploads** — `/api/upload` writes to Firebase Cloud Storage
 - **QR codes** — generated per donation
 - **Status history** — every status change is recorded with who changed it and why
 - **Audit trail** — privileged actions are logged
@@ -205,8 +205,8 @@ public/images/       gallery & NGO photos
 ### 1. Prerequisites
 
 - Node.js 20+
-- A PostgreSQL database (this project uses Supabase)
-- A Supabase project (database + storage)
+- A PostgreSQL database — this project uses [Neon](https://neon.tech) (free tier)
+- A Firebase project with Cloud Storage enabled (for image uploads)
 
 ### 2. Install
 
@@ -257,15 +257,15 @@ All variables are documented in [`.env.example`](.env.example) — **never commi
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `DATABASE_URL` | ✅ | Pooled Postgres connection used by the app at runtime |
-| `DIRECT_URL` | ✅ | Direct connection used by Prisma migrations |
+| `DATABASE_URL` | ✅ | Pooled Postgres connection used by the app at runtime (Neon `-pooler` host) |
+| `DIRECT_URL` | ✅ | Direct (non-pooled) connection used by Prisma migrations |
 | `AUTH_SECRET` | ✅ | NextAuth JWT signing secret (`npx auth secret`) |
 | `AUTH_URL` | ✅ | Public base URL of the deployment |
 | `NEXT_PUBLIC_SITE_URL` | ✅ | **Used to build the Approve/Reject links in emails** |
-| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Public anon key (browser) |
-| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Server-only key for storage writes — bypasses RLS |
-| `STORAGE_BUCKET` | ✅ | Storage bucket name (must exist and be public) |
+| `FIREBASE_PROJECT_ID` | ✅ | Firebase service-account `project_id` |
+| `FIREBASE_CLIENT_EMAIL` | ✅ | Firebase service-account `client_email` |
+| `FIREBASE_PRIVATE_KEY` | ✅ | Service-account `private_key` — one line, literal `\n` escapes |
+| `FIREBASE_STORAGE_BUCKET` | ✅ | Storage bucket name, e.g. `my-app.firebasestorage.app` |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` | ✅ | SMTP relay details |
 | `SMTP_USER` / `SMTP_PASSWORD` | ✅ | SMTP credentials |
 | `EMAIL_FROM` | ✅ | "From" address on outgoing mail |
@@ -356,7 +356,7 @@ SEED_DEMO_USERS=true SEED_DEMO_PASSWORD="$(openssl rand -base64 18)" npm run see
 Earlier versions shipped a shared, publicly known password. Follow this procedure to
 check and remediate — **do not delete rows blindly**, and take a backup first.
 
-1. **Identify** — in the Supabase SQL editor, list accounts whose email matches the
+1. **Identify** — in the Neon SQL editor, list accounts whose email matches the
    documented demo addresses:
    ```sql
    SELECT id, email, role, "createdAt", "updatedAt"
@@ -390,13 +390,13 @@ The app deploys to **Vercel** with no extra configuration file.
 
 ### Two things that trip people up
 
-- **Use the transaction pooler for `DATABASE_URL` on Vercel.** Serverless functions are
-  short-lived and can exhaust the session pooler's connections:
+- **Use the pooled connection for `DATABASE_URL` on Vercel.** Serverless functions are
+  short-lived and can exhaust direct connections. On Neon the pooled hostname contains
+  `-pooler`:
   ```
-  postgresql://…@…pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+  postgresql://…@ep-xxx-pooler.region.aws.neon.tech/db?sslmode=require
   ```
-  Locally, the session pooler (port `5432`) is much faster — the two environments are
-  configured independently.
+  Keep `DIRECT_URL` on the non-pooled hostname so Prisma migrations still work.
 
 - **Approval links are built from `NEXT_PUBLIC_SITE_URL`.** If it is not set to the
   public domain, every approval email will link to `localhost:3000` and be dead on arrival.
@@ -427,7 +427,7 @@ reviewed and integrated every contribution into the final codebase.
 
 - `.env` is **git-ignored** — credentials are never committed. `.env.example` contains
   placeholder names only.
-- Server secrets (`SUPABASE_SERVICE_ROLE_KEY`, SMTP credentials, `AUTH_SECRET`) are used
+- Server secrets (`FIREBASE_PRIVATE_KEY`, SMTP credentials, `AUTH_SECRET`) are used
   exclusively in server code and never exposed to the browser.
 - Approval tokens are SHA-256 hashed, single-use and expiring; the raw token only ever
   appears inside the approval email.

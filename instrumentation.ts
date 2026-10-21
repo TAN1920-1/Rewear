@@ -2,7 +2,7 @@
  * Next.js instrumentation hook — runs once when the server boots.
  *
  * Warms the Prisma connection pool so the very first user request doesn't
- * pay the Supabase pooler handshake (~1–2s). Node runtime only.
+ * pay the database pooler handshake (~1–2s). Node runtime only.
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {

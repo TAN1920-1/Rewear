@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { useState } from "react"
 import {
   Settings as SettingsIcon,
   Building2,
@@ -23,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { ChangePasswordCard } from "./ChangePasswordCard"
 
 export default async function AdminSettingsPage() {
   const user = await requireRole(UserRole.NGO_ADMIN, UserRole.NGO_STAFF)
@@ -58,20 +58,7 @@ export default async function AdminSettingsPage() {
       where: { ngoId },
     }),
   ])
-  const [newPassword, setNewPassword] = useState("")
-  const [resetMessage, setResetMessage] = useState<string | null>(null)
 
-  const handleReset = async () => {
-    const res = await fetch('/api/admin/reset-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: "tanishqgames203@gmail.com", newPassword })
-    })
-    const data = await res.json()
-    if (data.error) setResetMessage(data.error)
-    else setResetMessage('Password reset successful')
-    setNewPassword("")
-  }
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -252,6 +239,8 @@ export default async function AdminSettingsPage() {
             </Button>
           </CardContent>
         </Card>
+
+        <ChangePasswordCard />
       </div>
 
       <Card className="glass border-white/50 shadow-lg">

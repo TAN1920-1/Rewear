@@ -6,7 +6,7 @@ import { FileUploadValidator } from "@/lib/core/validation/FileUploadValidator"
 
 /**
  * Filesystem implementation of `IStorageProvider` (polymorphism).
- * Intended as a zero-config development fallback when Supabase Storage
+ * Intended as a zero-config development fallback when Firebase Storage
  * credentials are not present. Not durable, and not suitable for serverless.
  */
 export class LocalStorageProvider implements IStorageProvider {

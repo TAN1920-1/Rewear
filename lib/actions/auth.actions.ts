@@ -3,7 +3,7 @@
 import { headers } from "next/headers"
 import { signIn, auth } from "@/lib/auth/auth"
 import * as bcrypt from "bcryptjs"
-import { createUser } from "@/lib/auth/guards"
+import { createUser, getSessionUser } from "@/lib/auth/guards"
 import { prisma } from "@/lib/db/prisma"
 import { UserRole } from "@/lib/enums"
 import {
@@ -11,6 +11,8 @@ import {
   type LoginSchemaType,
   RegisterSchema,
   type RegisterSchemaType,
+  ChangePasswordSchema,
+  type ChangePasswordSchemaType,
 } from "@/lib/validations/auth.schema"
 import { RateLimitError, toAppError } from "@/lib/core/errors/AppError"
 import { enforceRateLimit, getClientIp } from "@/lib/core/rate-limit"
@@ -19,6 +21,8 @@ const LOGIN_LIMIT = 10
 const LOGIN_WINDOW_MS = 60_000 // 10 attempts / minute / (ip + email)
 const REGISTER_LIMIT = 5
 const REGISTER_WINDOW_MS = 60 * 60_000 // 5 sign-ups / hour / ip
+const PASSWORD_LIMIT = 5
+const PASSWORD_WINDOW_MS = 15 * 60_000 // 5 attempts / 15 min / user
 
 function clientIp(): string {
   return getClientIp(headers())
@@ -124,23 +128,53 @@ export async function registerAction(values: RegisterSchemaType) {
   }
 
   return { success: true, redirectTo: "/donor/dashboard" }
-
-// Reset password for a given user (admin)
-export async function resetPasswordAction(email: string, newPassword: string) {
-  // Simple rate limiting could be added here if desired
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: { id: true }
-  })
-  if (!user) {
-    return { error: "User not found" }
-  }
-  // Hash the new password
-  const passwordHash = await bcrypt.hash(newPassword, 10)
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { passwordHash }
-  })
-  return { success: true }
 }
+
+/**
+ * Change the signed-in user's own password.
+ *
+ * Security: the target account is derived from the session only — never from
+ * client input — so this can never be used to reset someone else's password.
+ * The current password must be re-entered, and attempts are rate-limited.
+ */
+export async function changeOwnPasswordAction(values: ChangePasswordSchemaType) {
+  const validated = ChangePasswordSchema.safeParse(values)
+  if (!validated.success) {
+    return { error: validated.error.issues[0]?.message ?? "Invalid input." }
+  }
+
+  const sessionUser = await getSessionUser()
+  if (!sessionUser) {
+    return { error: "You must be signed in to change your password." }
+  }
+  const userId = sessionUser.id
+
+  try {
+    await enforceRateLimit(`change-password:${userId}`, PASSWORD_LIMIT, PASSWORD_WINDOW_MS)
+  } catch (error) {
+    return {
+      error: rateLimitMessage(error) ?? "Too many attempts. Please try again later.",
+    }
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { passwordHash: true },
+  })
+  if (!user?.passwordHash) {
+    return { error: "Account not found." }
+  }
+
+  const currentMatches = await bcrypt.compare(
+    validated.data.currentPassword,
+    user.passwordHash
+  )
+  if (!currentMatches) {
+    return { error: "Your current password is incorrect." }
+  }
+
+  const passwordHash = await bcrypt.hash(validated.data.newPassword, 10)
+  await prisma.user.update({ where: { id: userId }, data: { passwordHash } })
+
+  return { success: true }
 }

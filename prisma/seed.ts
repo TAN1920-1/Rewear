@@ -52,8 +52,8 @@ async function main() {
     },
   });
 
-  console.log("  2/22 Creating Users (1 NGO_ADMIN, 2 NGO_STAFF, 10 DONORS)...");
-  const [ngoAdmin, ...staffAndDonors] = await Promise.all([
+  console.log("  2/22 Creating Users (2 NGO_ADMINs, 2 NGO_STAFF, 10 DONORS)...");
+  const [ngoAdmin, tAdmin, ...staffAndDonors] = await Promise.all([
     prisma.user.create({
       data: {
         email: "admin@rewear.org",
@@ -63,6 +63,17 @@ async function main() {
         role: UserRole.NGO_ADMIN,
         ngoId: ngo.id,
         avatarUrl: "https://i.pravatar.cc/150?img=47",
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: "tanishqgames203@gmail.com",
+        passwordHash: hashedPassword,
+        name: "Tanishq Admin",
+        phone: "+91 99999 99999",
+        role: UserRole.NGO_ADMIN,
+        ngoId: ngo.id,
+        avatarUrl: "https://i.pravatar.cc/150?img=33",
       },
     }),
     prisma.user.create({
@@ -142,6 +153,15 @@ async function main() {
     prisma.staffAssignment.create({
       data: {
         userId: ngoAdmin.id,
+        ngoId: ngo.id,
+        modules: JSON.stringify(allModules),
+        assignedBy: ngoAdmin.id,
+        assignedAt: subMonths(now, 3),
+      },
+    }),
+    prisma.staffAssignment.create({
+      data: {
+        userId: tAdmin.id,
         ngoId: ngo.id,
         modules: JSON.stringify(allModules),
         assignedBy: ngoAdmin.id,

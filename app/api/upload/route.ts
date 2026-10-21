@@ -5,7 +5,7 @@ import { enforceRateLimit } from "@/lib/core/rate-limit"
 import { getStorageProvider } from "@/lib/core/storage"
 import { FileUploadValidator, IMAGE_UPLOAD_POLICY } from "@/lib/core/validation/FileUploadValidator"
 
-// Node runtime: the Supabase admin SDK and fs-based fallback both need it.
+// Node runtime: the Firebase Admin SDK and fs-based fallback both need it.
 export const runtime = "nodejs"
 
 const validator = new FileUploadValidator(IMAGE_UPLOAD_POLICY)

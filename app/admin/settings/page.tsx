@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { useState } from "react"
 import {
   Settings as SettingsIcon,
   Building2,
@@ -57,7 +58,20 @@ export default async function AdminSettingsPage() {
       where: { ngoId },
     }),
   ])
+  const [newPassword, setNewPassword] = useState("")
+  const [resetMessage, setResetMessage] = useState<string | null>(null)
 
+  const handleReset = async () => {
+    const res = await fetch('/api/admin/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: "tanishqgames203@gmail.com", newPassword })
+    })
+    const data = await res.json()
+    if (data.error) setResetMessage(data.error)
+    else setResetMessage('Password reset successful')
+    setNewPassword("")
+  }
   return (
     <div className="space-y-6">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">

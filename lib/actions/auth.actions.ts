@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers"
 import { signIn, auth } from "@/lib/auth/auth"
+import * as bcrypt from "bcryptjs"
 import { createUser } from "@/lib/auth/guards"
 import { prisma } from "@/lib/db/prisma"
 import { UserRole } from "@/lib/enums"
@@ -123,4 +124,23 @@ export async function registerAction(values: RegisterSchemaType) {
   }
 
   return { success: true, redirectTo: "/donor/dashboard" }
+
+// Reset password for a given user (admin)
+export async function resetPasswordAction(email: string, newPassword: string) {
+  // Simple rate limiting could be added here if desired
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true }
+  })
+  if (!user) {
+    return { error: "User not found" }
+  }
+  // Hash the new password
+  const passwordHash = await bcrypt.hash(newPassword, 10)
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { passwordHash }
+  })
+  return { success: true }
+}
 }

@@ -27,15 +27,9 @@ export const NGO_CONTACT = {
 } as const
 
 /**
- * Monetary donation details. Fill in the real values below to publish them on
- * the home page — any field left as an empty string renders a muted "—"
- * placeholder on the site instead of leaking an unfinished value.
+ * Monetary donation details — currently a single UPI QR code that donors can
+ * scan with any payment app.
  */
 export const NGO_DONATION = {
   qrImage: "/images/donation-qr.jpeg",
-  accountHolder: "",
-  bankName: "",
-  accountNumber: "",
-  ifsc: "",
-  upiId: "",
 } as const

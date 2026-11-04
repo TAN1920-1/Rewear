@@ -188,8 +188,9 @@ async function main() {
     }),
   ]);
 
-  console.log("  4/22 Creating ClothingCategories (8 categories)...");
+  console.log("  4/22 Creating ClothingCategories (16 categories)...");
   const categoryData = [
+    // Clothing
     { name: "Shirts", slug: "shirts", genderAgeGroup: "Men", desc: "Formal and casual shirts for men", threshold: 25 },
     { name: "T-Shirts", slug: "t-shirts", genderAgeGroup: "Women", desc: "Everyday cotton t-shirts for women", threshold: 30 },
     { name: "Pants", slug: "pants", genderAgeGroup: "Children", desc: "Trousers, jeans, and bottoms for children", threshold: 20 },
@@ -198,6 +199,15 @@ async function main() {
     { name: "Dresses", slug: "dresses", genderAgeGroup: "Women", desc: "Casual and formal dresses for women", threshold: 20 },
     { name: "Sweaters", slug: "sweaters", genderAgeGroup: "Children", desc: "Woolen sweaters and cardigans for children", threshold: 20 },
     { name: "Baby Clothes", slug: "baby-clothes", genderAgeGroup: "Infants", desc: "Onesies, rompers, and layette for babies", threshold: 40 },
+    // Non-clothing essentials
+    { name: "Grains & Pulses", slug: "grains-pulses", genderAgeGroup: "Unisex", desc: "Rice, wheat, dal and other staple grains for family ration kits", threshold: 100 },
+    { name: "Toys", slug: "toys", genderAgeGroup: "Children", desc: "Soft toys, puzzles and learning toys for children", threshold: 40 },
+    { name: "Books & Stationery", slug: "books-stationery", genderAgeGroup: "Children", desc: "Textbooks, notebooks, pens and school stationery", threshold: 60 },
+    { name: "Footwear", slug: "footwear", genderAgeGroup: "Unisex", desc: "Footwear for children, women and men", threshold: 30 },
+    { name: "Blankets & Bedding", slug: "blankets-bedding", genderAgeGroup: "Unisex", desc: "Blankets, bedsheets and warm bedding for families", threshold: 25 },
+    { name: "Kitchen Utensils", slug: "kitchen-utensils", genderAgeGroup: "Unisex", desc: "Cooking and serving utensils for household kits", threshold: 20 },
+    { name: "Hygiene Kits", slug: "hygiene-kits", genderAgeGroup: "Unisex", desc: "Soap, sanitary pads and personal hygiene essentials", threshold: 50 },
+    { name: "School Bags", slug: "school-bags", genderAgeGroup: "Children", desc: "Backpacks and school bags for students", threshold: 40 },
   ];
 
   const categories = await Promise.all(
@@ -230,6 +240,15 @@ async function main() {
   function sizesForCategory(catName: string): string[] {
     if (catName === "Baby Clothes" || catName === "Socks") return infantSizes;
     if (catName === "Pants" || catName === "Sweaters") return kidsSizes;
+    // Non-clothing categories use meaningful "sizes" (units, sets, age bands).
+    if (catName === "Grains & Pulses") return ["1 kg", "5 kg", "10 kg"];
+    if (catName === "Toys") return ["Small", "Medium", "Large"];
+    if (catName === "Books & Stationery") return ["Primary", "Secondary"];
+    if (catName === "Footwear") return ["Kids", "Women", "Men"];
+    if (catName === "Blankets & Bedding") return ["Single", "Double"];
+    if (catName === "Kitchen Utensils") return ["Set"];
+    if (catName === "Hygiene Kits") return ["Standard"];
+    if (catName === "School Bags") return ["Small", "Large"];
     return adultSizes;
   }
 
@@ -889,7 +908,7 @@ async function main() {
   console.log("  NGO: 1");
   console.log("  Users: 13 (1 NGO_ADMIN + 2 NGO_STAFF + 10 DONORS)");
   console.log("  StaffAssignments: 3 (2 staff + 1 admin)");
-  console.log("  ClothingCategories: 8");
+  console.log("  ClothingCategories: 16 (8 clothing + 8 essentials)");
   console.log(`  Donations: ${NUM_DONATIONS} (2 REJECTED)`);
   console.log(`  DonationItems: ${allDonationItems.length} (1-4 per donation)`);
   console.log(`  DonationStatusHistory: ${allStatusHistories.length} (3-7 per donation)`);

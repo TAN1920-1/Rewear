@@ -17,4 +17,25 @@ export const NGO_CONTACT = {
     "https://www.openstreetmap.org/export/embed.html?bbox=73.8480%2C18.4430%2C73.8760%2C18.4640&layer=mapnik&marker=18.4530%2C73.8615",
   mapLink:
     "https://www.openstreetmap.org/search?query=Sukhsagar%20Nagar%2C%20Katraj%2C%20Pune",
+  /**
+   * WhatsApp deep link (wa.me) — the `91` country code is prefixed to the
+   * local mobile number so the chat opens on the correct international
+   * account regardless of the visitor's own region.
+   */
+  whatsappUrl:
+    "https://wa.me/917219185111?text=Hi%2C%20I%20would%20like%20to%20know%20more%20about%20donating%20to%20Mangaldham%20Bahuuddeshiy%20Samajik%20Sanstha.",
+} as const
+
+/**
+ * Monetary donation details. Fill in the real values below to publish them on
+ * the home page — any field left as an empty string renders a muted "—"
+ * placeholder on the site instead of leaking an unfinished value.
+ */
+export const NGO_DONATION = {
+  qrImage: "/images/donation-qr.jpeg",
+  accountHolder: "",
+  bankName: "",
+  accountNumber: "",
+  ifsc: "",
+  upiId: "",
 } as const

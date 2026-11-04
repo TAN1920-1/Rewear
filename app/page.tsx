@@ -7,8 +7,10 @@ import { PublicFooter } from "@/components/layout/PublicFooter"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { DonationGallery } from "@/components/site/DonationGallery"
+import { DonationSlider } from "@/components/site/DonationSlider"
+import { DonateMoneySection } from "@/components/site/DonateMoneySection"
 import { NgoContactSection } from "@/components/site/NgoContactSection"
+import { WhatsAppButton } from "@/components/site/WhatsAppButton"
 import { NGO_CONTACT } from "@/lib/constants/ngo-contact"
 import { SITE_URL } from "@/lib/constants/site"
 
@@ -200,7 +202,10 @@ export default function HomePage() {
         </section>
 
         {/* Gallery */}
-        <DonationGallery />
+        <DonationSlider />
+
+        {/* Money donations: QR code + bank details */}
+        <DonateMoneySection />
 
         {/* Contact & Location */}
         <NgoContactSection />
@@ -234,6 +239,8 @@ export default function HomePage() {
           </div>
         </section>
       </main>
+
+      <WhatsAppButton />
 
       <PublicFooter />
     </div>

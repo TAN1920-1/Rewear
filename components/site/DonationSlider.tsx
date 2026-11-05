@@ -42,6 +42,76 @@ const SLIDES = [
       "Bundled kits are prepared and dispatched to communities across Pune during our ongoing drives.",
   },
   {
+    src: "/images/donation-4.jpeg",
+    alt: "Volunteers with collected clothing donations at the drive",
+    title: "Hand in hand, hope in every box",
+    description:
+      "Volunteers coming together to collect, carry and catalogue every donated item with care.",
+  },
+  {
+    src: "/images/donation-5.jpeg",
+    alt: "Community members receiving donated clothing",
+    title: "Reaching the families",
+    description:
+      "Donated clothes reaching the families and communities who need them most.",
+  },
+  {
+    src: "/images/donation-6.jpeg",
+    alt: "Volunteers organising sorted donated clothes",
+    title: "Sorted and ready",
+    description:
+      "Every garment is sorted by size and season so it can be matched to the right requirement.",
+  },
+  {
+    src: "/images/donation-7.jpeg",
+    alt: "Staff and volunteers preparing a donation drive",
+    title: "Together at the centre",
+    description:
+      "Staff and volunteers prepare the next drive at our Sukhsagar Nagar centre in Katraj.",
+  },
+  {
+    src: "/images/donation-8.jpeg",
+    alt: "Packed donation kits lined up for distribution",
+    title: "Kits lined up",
+    description:
+      "Freshly packed donation kits waiting to be handed over to beneficiary groups.",
+  },
+  {
+    src: "/images/donation-9.jpeg",
+    alt: "Donated clothing items handed to a community member",
+    title: "A second life, a new smile",
+    description:
+      "Gently used clothes find a second life with someone who truly needs them.",
+  },
+  {
+    src: "/images/donation-10.jpeg",
+    alt: "Volunteers inspecting donated garments before distribution",
+    title: "Quality checked",
+    description:
+      "Each item is inspected and cleaned before it is cleared for distribution.",
+  },
+  {
+    src: "/images/donation-11.jpeg",
+    alt: "Boxes of donated clothes ready for dispatch",
+    title: "Ready to dispatch",
+    description:
+      "Boxed donations are labelled and loaded for dispatch to partner communities.",
+  },
+  {
+    src: "/images/donation-12.jpeg",
+    alt: "Volunteers and beneficiaries at a donation handover",
+    title: "Where kindness lands",
+    description:
+      "The moment your donation reaches the community — the reason we do this every day.",
+  },
+  {
+    src: "/images/donation-13.jpeg",
+    alt: "The REWEAR team with collected donations",
+    title: "Powered by donors like you",
+    description:
+      "Every drive is powered entirely by donors and volunteers who give their time and goods.",
+  },
+  {
     src: "/images/gallery-1.webp",
     alt: "Warm community volunteers sorting colourful donated clothes at the NGO centre",
     title: "A community effort",

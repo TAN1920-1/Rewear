@@ -369,7 +369,8 @@ export function DonationFormClient({
                       Items to Donate
                     </CardTitle>
                     <CardDescription>
-                      Add each type of clothing item you&apos;re donating.
+                      Add each type of item you&apos;re donating — clothes, toys,
+                      books, grains or other essentials.
                     </CardDescription>
                   </div>
                   <Button type="button" onClick={addItem} variant="outline" size="sm">

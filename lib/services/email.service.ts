@@ -202,7 +202,7 @@ function getManagerRecipients(): string[] {
       .filter(Boolean)
   }
   // Sensible fallback so the flow never silently dies if MANAGER_EMAIL is unset.
-  return ["tanishqgames203@gmail.com"]
+  return ["Mangaldhambssanstha@gmail.com"]
 }
 
 export function getEmailDeliveryKind(): "smtp" | "log" {

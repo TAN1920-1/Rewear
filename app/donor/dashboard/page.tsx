@@ -155,9 +155,9 @@ export default async function DonorDashboardPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Donation ID</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead className="hidden sm:table-cell">Date</TableHead>
                   <TableHead>Items</TableHead>
-                  <TableHead>Campaign</TableHead>
+                  <TableHead className="hidden md:table-cell">Campaign</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -168,7 +168,7 @@ export default async function DonorDashboardPage() {
                     <TableCell className="font-medium text-slate-900">
                       {donation.donationId}
                     </TableCell>
-                    <TableCell className="text-slate-600">
+                    <TableCell className="hidden sm:table-cell text-slate-600">
                       {new Date(donation.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
@@ -177,7 +177,7 @@ export default async function DonorDashboardPage() {
                         {donation.totalItems} items
                       </span>
                     </TableCell>
-                    <TableCell className="text-slate-600">
+                    <TableCell className="hidden md:table-cell text-slate-600">
                       {donation.campaign?.name ?? "—"}
                     </TableCell>
                     <TableCell>

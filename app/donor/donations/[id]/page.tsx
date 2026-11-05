@@ -228,10 +228,10 @@ export default async function DonationDetailPage({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Category</TableHead>
-                    <TableHead>Size</TableHead>
-                    <TableHead>Condition</TableHead>
+                    <TableHead className="hidden sm:table-cell">Size</TableHead>
+                    <TableHead className="hidden md:table-cell">Condition</TableHead>
                     <TableHead className="text-right">Qty</TableHead>
-                    <TableHead>Description</TableHead>
+                    <TableHead className="hidden lg:table-cell">Description</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -240,10 +240,10 @@ export default async function DonationDetailPage({
                       <TableCell className="font-medium text-slate-900">
                         {item.category.name}
                       </TableCell>
-                      <TableCell className="text-slate-600">
+                      <TableCell className="hidden sm:table-cell text-slate-600">
                         {item.size ?? "—"}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <Badge variant="outline">
                           {conditionLabels[item.condition as ClothingCondition] ?? item.condition}
                         </Badge>
@@ -251,7 +251,7 @@ export default async function DonationDetailPage({
                       <TableCell className="text-right font-medium text-slate-900">
                         {item.quantity}
                       </TableCell>
-                      <TableCell className="text-slate-600">
+                      <TableCell className="hidden lg:table-cell text-slate-600">
                         {item.description ?? "—"}
                       </TableCell>
                     </TableRow>

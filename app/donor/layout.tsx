@@ -86,7 +86,7 @@ export default async function DonorLayout({
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto flex flex-col lg:flex-row w-full max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:px-8">
         <aside className="hidden w-64 shrink-0 lg:block">
           <nav className="glass sticky top-24 space-y-1 rounded-2xl border-white/60 p-3">
             {navItems.map((item) => (

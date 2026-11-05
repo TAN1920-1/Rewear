@@ -273,7 +273,7 @@ export function DonationSlider() {
 
         {/* Dots + counter */}
         <div className="flex items-center justify-between gap-4 border-t border-white/60 bg-white/70 px-4 py-3 backdrop-blur sm:px-6">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {SLIDES.map((slide, i) => (
               <button
                 key={slide.src}

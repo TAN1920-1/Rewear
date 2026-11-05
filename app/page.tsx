@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DonationSlider } from "@/components/site/DonationSlider"
+import { DonationFacilities } from "@/components/site/DonationFacilities"
 import { DonateMoneySection } from "@/components/site/DonateMoneySection"
 import { NgoContactSection } from "@/components/site/NgoContactSection"
 import { WhatsAppButton } from "@/components/site/WhatsAppButton"
@@ -25,9 +26,9 @@ const jsonLd = {
   url: SITE_URL,
   email: NGO_CONTACT.email,
   telephone: NGO_CONTACT.phoneDisplay,
-  slogan: "Give clothes a second life",
+  slogan: "Give your items a second life",
   description:
-    "A smart NGO clothing donation and resource management system — donate, track every item, and see exactly where your kindness lands.",
+    "A smart NGO clothing and resource management system — donate, track every item, and see exactly where your kindness lands.",
   logo: `${SITE_URL}/apple-icon.png`,
   image: `${SITE_URL}/og-image.png`,
   address: {
@@ -81,14 +82,14 @@ export default function HomePage() {
                 Smart NGO clothing donation platform
               </Badge>
               <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
-                Give clothes a{" "}
+                Give your items a{" "}
                 <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
                   second life
                 </span>
                 . Change a life today.
               </h1>
               <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-600">
-                Donate pre-loved clothing with full transparency. Track each item from your doorstep to the
+                Donate pre-loved clothing, toys, and essentials with full transparency. Track each item from your doorstep to the
                 community that needs it. REWEAR connects your kindness with verified NGO operations.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -182,7 +183,7 @@ export default function HomePage() {
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-slate-600">
               Our end-to-end platform helps both donors and NGO staff stay aligned on the same mission:
-              getting the right clothes to the right people, at the right time.
+              getting the right items to the right people, at the right time.
             </p>
           </div>
 
@@ -200,6 +201,9 @@ export default function HomePage() {
             ))}
           </div>
         </section>
+
+        {/* Donation Facilities (Toys, Books, Grains etc) */}
+        <DonationFacilities />
 
         {/* Gallery */}
         <DonationSlider />
